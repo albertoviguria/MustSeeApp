@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.historial) {
 
         } else if (id == R.id.aboutUs) {
+
             Intent intent = new Intent(this,AboutUsActivity.class);
             startActivityForResult(intent, SHOW_ABOUTUSACTIVITY);
         }
