@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -13,19 +14,29 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.Toast;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseQuery;
+import java.util.List;
+import see.must.mustseeapp.Model.InterestPoint;
 
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final int SHOW_ABOUTUSACTIVITY = 3;
+    ArrayAdapter<InterestPoint> todoItemsAdapter;
+    TravelPointsApplication tpa;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         Mapbox.getInstance(getApplicationContext(),"pk.eyJ1IjoiaW5pZ29sZXJnYSIsImEiOiJjamRlZWRjemswYmx4MzNwYzE4YWc2czg3In0.R6vOf25m3XlOTz-lmrTZ8g" );
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -102,4 +113,23 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+    private void getServerList() {
+
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
+                if (e == null) {
+                    tpa.pointList = objects;
+                    Log.v("query OK ", "getServerList()");
+                } else {
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+
+        });
 }

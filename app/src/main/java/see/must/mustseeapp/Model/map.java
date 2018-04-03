@@ -32,4 +32,5 @@ public class map extends AppCompatActivity {
         super.onStart();
         mapView.onStart();
     }
+
 }
