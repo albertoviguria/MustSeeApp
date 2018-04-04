@@ -29,6 +29,10 @@
             android:name="see.must.mustseeapp.NewInteresPointActivity"
             android:label="NewPoint" >
         </activity>
+        <activity
+            android:name="see.must.mustseeapp.Model.ShowInteresPointActivity"
+            android:label="ShowPoint" >
+        </activity>
     </application>
 
 </manifest>

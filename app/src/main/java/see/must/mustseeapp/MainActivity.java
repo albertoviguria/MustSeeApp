@@ -21,6 +21,7 @@ import android.widget.Toast;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
@@ -33,10 +34,10 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
 import java.util.List;
-import java.util.Locale;
 
 import see.must.mustseeapp.Model.InterestPoint;
-import see.must.mustseeapp.Model.TravelPointsApplication;
+import see.must.mustseeapp.Model.ShowInteresPointActivity;
+import timber.log.Timber;
 
 
 public class MainActivity extends AppCompatActivity
@@ -44,10 +45,10 @@ public class MainActivity extends AppCompatActivity
 
     private static final int SHOW_ABOUTUSACTIVITY = 3;
     private static final int SHOW_NEWPOINTACTIVITY = 4;
+    private static final int SHOW_SHOWINTERESPOINTACTIVITY = 5;
     private MapView mapView;
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
-    TravelPointsApplication tpa;
     InterestPoint aInterestPoint;
 
     @Override
@@ -58,6 +59,7 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
+
         try {
             ParseObject.registerSubclass(InterestPoint.class);
 
@@ -80,15 +82,35 @@ public class MainActivity extends AppCompatActivity
                 mapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener() {
                     @Override
                     public void onMapClick(@NonNull LatLng point) {
-                        String string = String.format(Locale.US, "User clicked at: %s", point.toString());
-                        Toast.makeText(MainActivity.this, string, Toast.LENGTH_LONG).show();
-
                         Bundle bundle = new Bundle();
                         bundle.putDouble("latitud", point.getLatitude());
                         bundle.putDouble("longitud", point.getLongitude());
                         Intent intent = new Intent(getApplicationContext(), NewInteresPointActivity.class);
                         intent.putExtras(bundle);
                         startActivityForResult(intent, SHOW_NEWPOINTACTIVITY);
+                    }
+                });
+
+                mapboxMap.getMarkerViewManager().setOnMarkerViewClickListener(new MapboxMap.OnMarkerViewClickListener() {
+                    @Override
+                    public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
+                        Log.v("Datos punto:" , marker.getPosition().toString());
+                        Timber.e(marker.toString());
+
+                        Bundle bundle = new Bundle();
+                        bundle.putDouble("latitud", marker.getPosition().getLatitude());
+                        bundle.putDouble("longitud", marker.getPosition().getLongitude());
+                        bundle.putString("name", marker.getTitle().toString());
+
+                        //Obtener el objeto
+                        //bundle.putString("descripcion",)
+                        //imagen
+
+                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                        intent.putExtras(bundle);
+                        startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
+
+                        return false;
                     }
                 });
             }
@@ -230,6 +252,7 @@ public class MainActivity extends AppCompatActivity
                                 .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
                                 .icon(icon)
                                 .title(punto.getNombre()));
+
                     }
                 } else {
                     Log.v("error query, reason: " + e.getMessage(), "getServerList()");
@@ -250,6 +273,12 @@ public class MainActivity extends AppCompatActivity
                 Double longitud = bundle.getDouble("longitud");
                 String name = bundle.getString("name");
                 newParseObject(name, latitud, longitud);
+            }
+            else{
+                if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
+                    Bundle bundle = data.getExtras();
+                    meterAHistorial(bundle);
+                }
             }
         }
     }
@@ -277,6 +306,8 @@ public class MainActivity extends AppCompatActivity
         });
         this.getServerList();
     }
+
+    public void meterAHistorial(Bundle bundle){}
 }
 
 
