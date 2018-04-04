@@ -25,6 +25,10 @@
             android:name="see.must.mustseeapp.AboutUsActivity"
             android:label="AboutUs" >
         </activity>
+        <activity
+            android:name="see.must.mustseeapp.NewInteresPointActivity"
+            android:label="NewPoint" >
+        </activity>
     </application>
 
 </manifest>

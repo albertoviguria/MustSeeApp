@@ -12,4 +12,8 @@
     <string name="nombre1">Iñigo Lerga Valencia</string>
     <string name="nombre2">Alberto Viguria Echauri</string>
 
+    <string name="newpoint">Introduce los datos del nuevo Punto de Interés</string>
+    <string name="newname">Nombre del Punto</string>
+    <string name="button_add_location">Añadir punto</string>
+
 </resources>

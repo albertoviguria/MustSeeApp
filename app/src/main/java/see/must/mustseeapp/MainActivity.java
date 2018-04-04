@@ -1,5 +1,6 @@
 package see.must.mustseeapp;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -25,13 +26,12 @@ import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
-import com.mapbox.services.commons.models.Position;
 import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
-import java.util.ArrayList;
+import com.parse.SaveCallback;
 import java.util.List;
 import java.util.Locale;
 
@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
     TravelPointsApplication tpa;
+    InterestPoint aInterestPoint;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -239,6 +240,42 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == SHOW_NEWPOINTACTIVITY) {
+                Bundle bundle = data.getExtras();
+                Double latitud = bundle.getDouble("latitud");
+                Double longitud = bundle.getDouble("longitud");
+                String name = bundle.getString("name");
+                newParseObject(name, latitud, longitud);
+            }
+        }
+    }
+    private void newParseObject(String name, Double latitud, Double longitud) {
+
+        aInterestPoint = new InterestPoint();
+        aInterestPoint.setNombre(name);
+        aInterestPoint.setLatitud(latitud);
+        aInterestPoint.setLongitud(longitud);
+
+        aInterestPoint.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e == null) {
+                    todoItemsAdapter.notifyDataSetChanged();
+                    Log.v("object saved in server:", "newParseObject()");
+                } else {
+                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "newParseObject(): Object save failed  to server, reason: "+ e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+        });
+        this.getServerList();
     }
 }
 
