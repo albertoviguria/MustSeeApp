@@ -2,6 +2,7 @@ package see.must.mustseeapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
@@ -17,27 +18,82 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Icon;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
+import com.mapbox.mapboxsdk.geometry.LatLng;
+import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.services.commons.models.Position;
 import com.parse.FindCallback;
+import com.parse.Parse;
 import com.parse.ParseException;
+import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+
 import see.must.mustseeapp.Model.InterestPoint;
+import see.must.mustseeapp.Model.TravelPointsApplication;
 
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final int SHOW_ABOUTUSACTIVITY = 3;
+    private static final int SHOW_NEWPOINTACTIVITY = 4;
+    private MapView mapView;
     ArrayAdapter<InterestPoint> todoItemsAdapter;
+    private MapboxMap mapboxMap = null;
     TravelPointsApplication tpa;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Mapbox.getInstance(getApplicationContext(),"pk.eyJ1IjoiaW5pZ29sZXJnYSIsImEiOiJjamRlZWRjemswYmx4MzNwYzE4YWc2czg3In0.R6vOf25m3XlOTz-lmrTZ8g" );
-
+        Mapbox.getInstance(getApplicationContext(), "pk.eyJ1IjoiaW5pZ29sZXJnYSIsImEiOiJjamRlZWRjemswYmx4MzNwYzE4YWc2czg3In0.R6vOf25m3XlOTz-lmrTZ8g");
         setContentView(R.layout.activity_main);
+        mapView = (MapView) findViewById(R.id.mapView);
+        mapView.onCreate(savedInstanceState);
+        try {
+            ParseObject.registerSubclass(InterestPoint.class);
+
+            Parse.initialize(new Parse.Configuration.Builder(getApplicationContext())
+                    .applicationId("myAppId")
+                    .clientKey("empty")
+                    .server("https://mustseeapp.herokuapp.com/parse/")
+                    .build());
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+
+        mapView.getMapAsync(new OnMapReadyCallback() {
+            @Override
+            public void onMapReady(MapboxMap map) {
+                mapboxMap = map;
+
+                getServerList();
+
+                mapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener() {
+                    @Override
+                    public void onMapClick(@NonNull LatLng point) {
+                        String string = String.format(Locale.US, "User clicked at: %s", point.toString());
+                        Toast.makeText(MainActivity.this, string, Toast.LENGTH_LONG).show();
+
+                        Bundle bundle = new Bundle();
+                        bundle.putDouble("latitud", point.getLatitude());
+                        bundle.putDouble("longitud", point.getLongitude());
+                        Intent intent = new Intent(getApplicationContext(), NewInteresPointActivity.class);
+                        intent.putExtras(bundle);
+                        startActivityForResult(intent, SHOW_NEWPOINTACTIVITY);
+                    }
+                });
+            }
+        });
+
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -105,7 +161,7 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.aboutUs) {
 
-            Intent intent = new Intent(this,AboutUsActivity.class);
+            Intent intent = new Intent(this, AboutUsActivity.class);
             startActivityForResult(intent, SHOW_ABOUTUSACTIVITY);
         }
 
@@ -114,14 +170,66 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private void getServerList() {
+    @Override
+    public void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mapView.onStop();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
+    }
+
+    public void getServerList() {
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(List<InterestPoint> objects, ParseException e) {
                 if (e == null) {
-                    tpa.pointList = objects;
-                    Log.v("query OK ", "getServerList()");
+                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+
+                    for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
+                        InterestPoint punto = todoItemsAdapter.getItem(i);
+
+                        IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+                        Icon icon = iconFactory.fromResource(R.drawable.marker);
+
+                        mapboxMap.addMarker(new MarkerViewOptions()
+                                .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
+                                .icon(icon)
+                                .title(punto.getNombre()));
+                    }
                 } else {
                     Log.v("error query, reason: " + e.getMessage(), "getServerList()");
                     Toast.makeText(
@@ -130,6 +238,10 @@ public class MainActivity extends AppCompatActivity
                             Toast.LENGTH_SHORT).show();
                 }
             }
-
         });
+    }
 }
+
+
+
+
