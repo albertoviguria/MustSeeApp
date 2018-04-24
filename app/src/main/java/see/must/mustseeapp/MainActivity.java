@@ -30,6 +30,7 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
@@ -272,7 +273,10 @@ public class MainActivity extends AppCompatActivity
                 Double latitud = bundle.getDouble("latitud");
                 Double longitud = bundle.getDouble("longitud");
                 String name = bundle.getString("name");
-                newParseObject(name, latitud, longitud);
+                byte[] imageFileData = bundle.getByteArray("imageFileData");
+                ParseFile image = new ParseFile(name+".png", imageFileData);
+                image.saveInBackground();
+                newParseObject(name, latitud, longitud, image);
             }
             else{
                 if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
@@ -282,13 +286,14 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
-    private void newParseObject(String name, Double latitud, Double longitud) {
+    private void newParseObject(String name, Double latitud, Double longitud, ParseFile image) {
 
         aInterestPoint = new InterestPoint();
         aInterestPoint.setNombre(name);
         aInterestPoint.setLatitud(latitud);
         aInterestPoint.setLongitud(longitud);
-
+        image.saveInBackground();
+        aInterestPoint.setImage(image);
         aInterestPoint.saveInBackground(new SaveCallback() {
             @Override
             public void done(ParseException e) {
