@@ -5,4 +5,17 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
+
+    <string name="About">About Us</string>
+    <string name="correo1"> i.lerga1997@gmail.com</string>
+    <string name="correo2"> alberto.viguria@gmail.com </string>
+    <string name="nombre1">Iñigo Lerga Valencia</string>
+    <string name="nombre2">Alberto Viguria Echauri</string>
+
+    <string name="newpoint">Introduce los datos del nuevo Punto de Interés</string>
+    <string name="newname">Nombre del Punto</string>
+    <string name="button_add_location">Añadir punto</string>
+
+    <string name="button_add_historial">Añadir a historial</string>
+
 </resources>
