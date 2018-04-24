@@ -21,6 +21,10 @@ public class NewInteresPointActivity extends Activity {
         EditText editText = findViewById(R.id.edit_nombre);
         String name = editText.getText().toString();
         bundle.putString("name", name);
+        EditText editText1 = findViewById(R.id.edit_descripcion);
+        String description = editText1.getText().toString();
+        bundle.putString("name", name);
+        bundle.putString("description", description);
         Intent intent = new Intent();
         intent.putExtras(bundle);
         setResult(RESULT_OK, intent);

@@ -5,6 +5,7 @@ import com.parse.ParseObject;
 
 @ParseClassName("InterestPoint")
 public class InterestPoint extends ParseObject{
+    public String descripcion;
 
     public InterestPoint() {
     }
@@ -30,6 +31,13 @@ public class InterestPoint extends ParseObject{
 
     public void setNombre(String nombre) {
         put("nombre",nombre);
+    }
+
+    public String getDescripcion() {return getString("descripcion");
+    }
+
+    public void setDescription(String description) {
+        put("descripcion",description);
     }
 
     @Override

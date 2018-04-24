@@ -17,12 +17,13 @@ public class ShowInteresPointActivity extends Activity {
         setContentView(R.layout.show_point);
         Intent intent = getIntent();
         bundle = intent.getExtras();
-        Double latitud = bundle.getDouble("latitud");
-        Double longitud = bundle.getDouble("longitud");
         String nombre = bundle.getString("name");
+        String descripcion = bundle.getString("descripcion");
 
         TextView titulo = findViewById(R.id.titulo);
         titulo.setText(nombre);
+        TextView desc = findViewById(R.id.descripcion);
+        desc.setText(descripcion);
     }
 
     public void insertarEnHistorial(View view) {

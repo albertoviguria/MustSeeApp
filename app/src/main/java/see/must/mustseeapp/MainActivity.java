@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
     InterestPoint aInterestPoint;
+    Bundle bundle = new Bundle();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,18 +98,12 @@ public class MainActivity extends AppCompatActivity
                         Log.v("Datos punto:" , marker.getPosition().toString());
                         Timber.e(marker.toString());
 
-                        Bundle bundle = new Bundle();
+
                         bundle.putDouble("latitud", marker.getPosition().getLatitude());
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
 
-                        //Obtener el objeto
-                        //bundle.putString("descripcion",)
-                        //imagen
-
-                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
-                        intent.putExtras(bundle);
-                        startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
+                        getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude());
 
                         return false;
                     }
@@ -265,6 +260,36 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
+    public void getInterestPointServer(String name, Double latitud, Double longitud) {
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.whereEqualTo("nombre", name);
+        query.whereEqualTo("latitud", latitud);
+        query.whereEqualTo("longitud", longitud);
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
+                if (e == null) {
+                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                    if(todoItemsAdapter.getCount() == 1){
+                        aInterestPoint = todoItemsAdapter.getItem(0);
+                        aInterestPoint.descripcion = aInterestPoint.getDescripcion();
+                        bundle.putString("descripcion", aInterestPoint.descripcion);
+                        //imagen
+
+                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                        intent.putExtras(bundle);
+                        startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
+                    }
+                } else {
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == SHOW_NEWPOINTACTIVITY) {
@@ -272,7 +297,8 @@ public class MainActivity extends AppCompatActivity
                 Double latitud = bundle.getDouble("latitud");
                 Double longitud = bundle.getDouble("longitud");
                 String name = bundle.getString("name");
-                newParseObject(name, latitud, longitud);
+                String description = bundle.getString("description");
+                newParseObject(name, description, latitud, longitud);
             }
             else{
                 if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
@@ -282,12 +308,13 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
-    private void newParseObject(String name, Double latitud, Double longitud) {
+    private void newParseObject(String name, String description, Double latitud, Double longitud) {
 
         aInterestPoint = new InterestPoint();
         aInterestPoint.setNombre(name);
         aInterestPoint.setLatitud(latitud);
         aInterestPoint.setLongitud(longitud);
+        aInterestPoint.setDescription(description);
 
         aInterestPoint.saveInBackground(new SaveCallback() {
             @Override
