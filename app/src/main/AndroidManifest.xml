@@ -30,7 +30,7 @@
             android:label="NewPoint" >
         </activity>
         <activity
-            android:name="see.must.mustseeapp.Model.ShowInteresPointActivity"
+            android:name="see.must.mustseeapp.ShowInteresPointActivity"
             android:label="ShowPoint" >
         </activity>
         <activity

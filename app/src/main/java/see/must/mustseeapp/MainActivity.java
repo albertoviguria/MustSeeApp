@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -14,7 +13,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
@@ -36,7 +34,6 @@ import com.parse.SaveCallback;
 import java.util.List;
 
 import see.must.mustseeapp.Model.InterestPoint;
-import see.must.mustseeapp.Model.ShowInteresPointActivity;
 import timber.log.Timber;
 
 
@@ -241,33 +238,21 @@ public class MainActivity extends AppCompatActivity
     public void getInterestPointServer(String name, Double latitud, Double longitud, final int n) {
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.whereEqualTo("nombre", name);
-        if(n==0) {
-            query.whereEqualTo("latitud", latitud);
-            query.whereEqualTo("longitud", longitud);
-        }
+        query.whereEqualTo("latitud", latitud);
+        query.whereEqualTo("longitud", longitud);
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(List<InterestPoint> objects, ParseException e) {
                 if (e == null) {
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
-                    if(n==1) {
-                        if (todoItemsAdapter.getCount() == 1) {
-                            aInterestPoint = todoItemsAdapter.getItem(0);
-                            aInterestPoint.descripcion = aInterestPoint.getDescripcion();
-                            bundle.putString("descripcion", aInterestPoint.descripcion);
-                            //imagen
+                    if (todoItemsAdapter.getCount() == 1) {
+                        aInterestPoint = todoItemsAdapter.getItem(0);
+                        aInterestPoint.descripcion = aInterestPoint.getDescripcion();
+                        bundle.putString("descripcion", aInterestPoint.descripcion);
+                        //imagen
 
-                            Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
-                            intent.putExtras(bundle);
-                            startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
-                        }
-                    }
-                    else{
-                        for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
-                            InterestPoint punto = todoItemsAdapter.getItem(i);
-
-                            //MONTAR LISTADO
-
-                        }
+                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                        intent.putExtras(bundle);
+                        startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
                     }
                 } else {
                     Log.v("error query, reason: " + e.getMessage(), "getServerList()");

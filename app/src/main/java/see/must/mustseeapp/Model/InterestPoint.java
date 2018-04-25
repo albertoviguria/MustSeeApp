@@ -42,6 +42,6 @@ public class InterestPoint extends ParseObject{
 
     @Override
     public String toString() {
-        return this.getNombre()+" "+this.getLatitud()+" "+this.getLongitud();
+        return this.getNombre()+" ";
     }
 }
