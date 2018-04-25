@@ -17,6 +17,7 @@ import com.parse.ParseQuery;
 
 import java.util.List;
 
+import see.must.mustseeapp.Model.CustomAdapter;
 import see.must.mustseeapp.Model.InterestPoint;
 
 public class SearchActivity extends Activity{
@@ -36,9 +37,10 @@ public class SearchActivity extends Activity{
             query.findInBackground(new FindCallback<InterestPoint>() {
                 public void done(List<InterestPoint> objects, ParseException e) {
                     if (e == null) {
-                        ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.row_layout, R.id.text, objects);
+                        //ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.row_layout, R.id.text, objects);
+                        Integer[] images={};
+                        CustomAdapter todoItemsAdapter = new CustomAdapter(SearchActivity.this, objects, images);
                         lv.setAdapter(todoItemsAdapter);
-                        Log.v("error, reason: ", "pasa");
                         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             @Override
                             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {

@@ -8,24 +8,20 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.List;
 import see.must.mustseeapp.R;
 
-public class CustomAdapter extends ArrayAdapter<String>{
+public class CustomAdapter extends ArrayAdapter<InterestPoint>{
     private final Activity context;
-    private final String[] puntos;
-    private Integer[] imageId;
+    private final List<InterestPoint>  puntos;
+    private Integer[] images;
 
-    public CustomAdapter(Activity context,String[] puntos, Integer[] imageId) {
-        super(context, R.layout.row_layout, puntos);
+    public CustomAdapter(Activity context, List<InterestPoint> objects, Integer[] imagenes) {
+        super(context,R.layout.row_layout, objects);
         this.context = context;
-        this.puntos = puntos;
-        this.imageId = imageId;
+        this.puntos =  objects;
+        this.images = imagenes;
     }
-
-    public void set_imageId(Integer[] imageId){
-        this.imageId = imageId;
-    }
-
     @Override
     public View getView(int position, View view, ViewGroup parent) {
         LayoutInflater inflater = context.getLayoutInflater();
@@ -33,9 +29,9 @@ public class CustomAdapter extends ArrayAdapter<String>{
         TextView txtTitle = (TextView) rowView.findViewById(R.id.text);
 
         ImageView imageView = (ImageView) rowView.findViewById(R.id.pic);
-        txtTitle.setText(puntos[position]);
+        txtTitle.setText(puntos.get(position).getNombre());
 
-        imageView.setImageResource(imageId[position]);
+        imageView.setImageResource(images[position]);
         return rowView;
     }
 }
