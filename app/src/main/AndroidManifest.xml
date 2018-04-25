@@ -33,6 +33,10 @@
             android:name="see.must.mustseeapp.Model.ShowInteresPointActivity"
             android:label="ShowPoint" >
         </activity>
+        <activity
+            android:name="see.must.mustseeapp.SearchActivity"
+            android:label="Search" >
+        </activity>
     </application>
 
 </manifest>

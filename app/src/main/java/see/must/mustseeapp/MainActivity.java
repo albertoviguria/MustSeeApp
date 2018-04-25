@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity
     private static final int SHOW_ABOUTUSACTIVITY = 3;
     private static final int SHOW_NEWPOINTACTIVITY = 4;
     private static final int SHOW_SHOWINTERESPOINTACTIVITY = 5;
+    private static final int SHOW_SEARCH = 6;
     private MapView mapView;
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
@@ -103,7 +104,7 @@ public class MainActivity extends AppCompatActivity
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
 
-                        getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude());
+                        getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
 
                         return false;
                     }
@@ -119,8 +120,9 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                //BUSCADOR AQUÍ QUE LLAMA A LAYOUT PARA LISTADO
+                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+                startActivityForResult(intent, SHOW_SEARCH);
             }
         });
 
@@ -145,37 +147,13 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.buscar) {
-            // Handle the camera action
-        } else if (id == R.id.historial) {
+        if (id == R.id.historial) {
 
         } else if (id == R.id.aboutUs) {
 
@@ -260,24 +238,36 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    public void getInterestPointServer(String name, Double latitud, Double longitud) {
+    public void getInterestPointServer(String name, Double latitud, Double longitud, final int n) {
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.whereEqualTo("nombre", name);
-        query.whereEqualTo("latitud", latitud);
-        query.whereEqualTo("longitud", longitud);
+        if(n==0) {
+            query.whereEqualTo("latitud", latitud);
+            query.whereEqualTo("longitud", longitud);
+        }
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(List<InterestPoint> objects, ParseException e) {
                 if (e == null) {
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
-                    if(todoItemsAdapter.getCount() == 1){
-                        aInterestPoint = todoItemsAdapter.getItem(0);
-                        aInterestPoint.descripcion = aInterestPoint.getDescripcion();
-                        bundle.putString("descripcion", aInterestPoint.descripcion);
-                        //imagen
+                    if(n==1) {
+                        if (todoItemsAdapter.getCount() == 1) {
+                            aInterestPoint = todoItemsAdapter.getItem(0);
+                            aInterestPoint.descripcion = aInterestPoint.getDescripcion();
+                            bundle.putString("descripcion", aInterestPoint.descripcion);
+                            //imagen
 
-                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
-                        intent.putExtras(bundle);
-                        startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
+                            Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                            intent.putExtras(bundle);
+                            startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
+                        }
+                    }
+                    else{
+                        for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
+                            InterestPoint punto = todoItemsAdapter.getItem(i);
+
+                            //MONTAR LISTADO
+
+                        }
                     }
                 } else {
                     Log.v("error query, reason: " + e.getMessage(), "getServerList()");
@@ -304,6 +294,13 @@ public class MainActivity extends AppCompatActivity
                 if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
                     Bundle bundle = data.getExtras();
                     meterAHistorial(bundle);
+                }
+                else{
+                    if(requestCode == SHOW_SEARCH){
+                        Bundle bundle = data.getExtras();
+                        String nombre = bundle.getString("name");
+                        getInterestPointServer(nombre,-1.,-1.,0);
+                    }
                 }
             }
         }

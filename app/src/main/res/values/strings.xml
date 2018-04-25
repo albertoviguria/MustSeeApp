@@ -17,6 +17,8 @@
     <string name="newname">Nombre del Punto</string>
     <string name="button_add_location">Añadir punto</string>
 
+    <string name="buscar">Buscar</string>
+
     <string name="button_add_historial">Añadir a historial</string>
 
 </resources>
