@@ -37,9 +37,9 @@ public class SearchActivity extends Activity{
             query.findInBackground(new FindCallback<InterestPoint>() {
                 public void done(List<InterestPoint> objects, ParseException e) {
                     if (e == null) {
-                        //ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.row_layout, R.id.text, objects);
-                        Integer[] images={};
-                        CustomAdapter todoItemsAdapter = new CustomAdapter(SearchActivity.this, objects, images);
+                        ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.row_layout, R.id.text, objects);
+                        //Integer[] images={};
+                        //CustomAdapter todoItemsAdapter = new CustomAdapter(SearchActivity.this, objects, images);
                         lv.setAdapter(todoItemsAdapter);
                         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                             @Override
