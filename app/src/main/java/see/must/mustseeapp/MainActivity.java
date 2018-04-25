@@ -2,6 +2,8 @@ package see.must.mustseeapp;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -34,6 +36,8 @@ import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
+
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 import see.must.mustseeapp.Model.InterestPoint;
@@ -273,8 +277,15 @@ public class MainActivity extends AppCompatActivity
                 Double latitud = bundle.getDouble("latitud");
                 Double longitud = bundle.getDouble("longitud");
                 String name = bundle.getString("name");
-                byte[] imageFileData = bundle.getByteArray("imageFileData");
-                ParseFile image = new ParseFile(name+".png", imageFileData);
+                String filePath = bundle.getString("imagePath");
+
+                Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                // Compress image to lower quality scale 1 - 100
+                bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+                byte[] imageFileData = stream.toByteArray();
+
+                ParseFile image = new ParseFile(name+".jpg", imageFileData);
                 image.saveInBackground();
                 newParseObject(name, latitud, longitud, image);
             }

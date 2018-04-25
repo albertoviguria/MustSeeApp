@@ -1,26 +1,24 @@
 package see.must.mustseeapp;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 
 
 public class NewInteresPointActivity extends Activity {
     Bundle bundle;
-    private byte[] image;
     private String filePath;
     private String file_extn;
 
@@ -32,9 +30,25 @@ public class NewInteresPointActivity extends Activity {
         bundle = intent.getExtras();
     }
     public void addPhoto(View view){
-        Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
-        photoPickerIntent.setType("image/*");
-        startActivityForResult(photoPickerIntent, 1);
+        final int MyVersion = Build.VERSION.SDK_INT;
+        if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
+            int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1;
+            if (ContextCompat.checkSelfPermission(NewInteresPointActivity.this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                //pedir permisos
+                ActivityCompat.requestPermissions(NewInteresPointActivity.this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                        MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+                } else {
+                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                photoPickerIntent.setType("image/*");
+                startActivityForResult(photoPickerIntent, 1);
+            }
+        }else{
+            Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+            photoPickerIntent.setType("image/*");
+            startActivityForResult(photoPickerIntent, 1);
+        }
     }
 
     @Override
@@ -46,17 +60,12 @@ public class NewInteresPointActivity extends Activity {
 
                 filePath = getPath(selectedImage);
                 file_extn = filePath.substring(filePath.lastIndexOf(".") + 1);
-                //image_name_tv.setText(filePath);
 
                 try {
                     if (file_extn.equals("img") || file_extn.equals("jpg") || file_extn.equals("jpeg") || file_extn.equals("gif") || file_extn.equals("png")) {
                         //FINE
                         Log.d("Foto seleccionada: ", filePath);
-                        Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
-                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                        // Compress image to lower quality scale 1 - 100
-                        bitmapToUpload.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                        image = stream.toByteArray();
+
                     } else {
                         //NOT IN REQUIRED FORMAT
                     }
@@ -71,8 +80,6 @@ public class NewInteresPointActivity extends Activity {
         Cursor cursor = managedQuery(uri, projection, null, null, null);
         int column_index = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
         cursor.moveToFirst();
-        //imagePath = cursor.getString(column_index);
-
         return cursor.getString(column_index);
     }
 
@@ -82,7 +89,6 @@ public class NewInteresPointActivity extends Activity {
         bundle.putString("name", name);
         bundle.putString("imagePath", filePath);
         bundle.putString("imageExtension", file_extn);
-        bundle.putByteArray("imageFileData", image);
         Intent intent = new Intent();
         intent.putExtras(bundle);
         setResult(RESULT_OK, intent);
