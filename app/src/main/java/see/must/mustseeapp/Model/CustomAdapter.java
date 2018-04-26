@@ -17,11 +17,12 @@ public class CustomAdapter extends ArrayAdapter<InterestPoint>{
     private final List<InterestPoint> puntos;
     private Integer[] images;
 
-    public CustomAdapter(Context context, List<InterestPoint> objects, Integer[] imagenes) {
+    //Integer[] imagenes
+    public CustomAdapter(Context context, List<InterestPoint> objects ) {
         super(context,R.layout.row_layout, objects);
         this.context = context;
         this.puntos =  objects;
-        this.images = imagenes;
+        //this.images = imagenes;
     }
     @Override
     public View getView(int position, View view, ViewGroup parent) {

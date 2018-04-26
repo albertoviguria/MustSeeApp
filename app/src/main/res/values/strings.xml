@@ -19,6 +19,9 @@
 
     <string name="buscar">Buscar</string>
 
+    <string name="Historial">Historial</string>
+    <string name="Visitado">Visitado</string>
+
     <string name="button_add_historial">Añadir a historial</string>
 
 </resources>

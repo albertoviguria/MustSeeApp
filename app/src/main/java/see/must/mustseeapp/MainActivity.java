@@ -32,6 +32,7 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
 import java.util.List;
+import java.util.UUID;
 
 import see.must.mustseeapp.Model.InterestPoint;
 import timber.log.Timber;
@@ -44,6 +45,7 @@ public class MainActivity extends AppCompatActivity
     private static final int SHOW_NEWPOINTACTIVITY = 4;
     private static final int SHOW_SHOWINTERESPOINTACTIVITY = 5;
     private static final int SHOW_SEARCH = 6;
+    private static final int SHOW_HISTORIALSACTIVITY = 7;
     private MapView mapView;
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
@@ -151,9 +153,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.historial) {
-
+            Intent intent = new Intent(this, ShowHistorialActivity.class);
+            startActivityForResult(intent, SHOW_HISTORIALSACTIVITY);
         } else if (id == R.id.aboutUs) {
-
             Intent intent = new Intent(this, AboutUsActivity.class);
             startActivityForResult(intent, SHOW_ABOUTUSACTIVITY);
         }
@@ -248,6 +250,7 @@ public class MainActivity extends AppCompatActivity
                         aInterestPoint = todoItemsAdapter.getItem(0);
                         aInterestPoint.descripcion = aInterestPoint.getDescripcion();
                         bundle.putString("descripcion", aInterestPoint.descripcion);
+                        bundle.putString("id", aInterestPoint.getId());
                         //imagen
 
                         Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
@@ -273,24 +276,19 @@ public class MainActivity extends AppCompatActivity
                 Double longitud = bundle.getDouble("longitud");
                 String name = bundle.getString("name");
                 String description = bundle.getString("description");
-                newParseObject(name, description, latitud, longitud);
+                String id = bundle.getString("id");
+                newParseObject(name, description, latitud, longitud,id);
             }
             else{
-                if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
+                if(requestCode == SHOW_SEARCH){
                     Bundle bundle = data.getExtras();
-                    meterAHistorial(bundle);
-                }
-                else{
-                    if(requestCode == SHOW_SEARCH){
-                        Bundle bundle = data.getExtras();
-                        String nombre = bundle.getString("name");
-                        getInterestPointServer(nombre,-1.,-1.,0);
-                    }
+                    String nombre = bundle.getString("name");
+                    getInterestPointServer(nombre,-1.,-1.,0);
                 }
             }
         }
     }
-    private void newParseObject(String name, String description, Double latitud, Double longitud) {
+    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id) {
 
         aInterestPoint = new InterestPoint();
         aInterestPoint.setNombre(name);
@@ -298,25 +296,46 @@ public class MainActivity extends AppCompatActivity
         aInterestPoint.setLongitud(longitud);
         aInterestPoint.setDescription(description);
 
-        aInterestPoint.saveInBackground(new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.whereEqualTo("id", id);
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
                 if (e == null) {
-                    todoItemsAdapter.notifyDataSetChanged();
-                    Log.v("object saved in server:", "newParseObject()");
+                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                    if (todoItemsAdapter.getCount() > 0) {
+                        String uniqueId = UUID.randomUUID().toString();
+                        newParseObject(name, description, latitud, longitud,uniqueId);
+                    }
+                    else{
+                        aInterestPoint.setId(id);
+                        aInterestPoint.saveInBackground(new SaveCallback() {
+                            @Override
+                            public void done(ParseException e) {
+                                if (e == null) {
+                                    todoItemsAdapter.notifyDataSetChanged();
+                                    Log.v("object saved in server:", "newParseObject()");
+                                    //display file saved message
+                                    Toast.makeText(getBaseContext(), "Punto de Interés creado correctamente!", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
+                                    //display file saved message
+                                    Toast.makeText(getBaseContext(), "El Punto de Interés no se ha creado!", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                        });
+                    }
                 } else {
-                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
                     Toast.makeText(
                             getBaseContext(),
-                            "newParseObject(): Object save failed  to server, reason: "+ e.getMessage(), Toast.LENGTH_SHORT).show();
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 }
             }
-
         });
         this.getServerList();
     }
-
-    public void meterAHistorial(Bundle bundle){}
 }
 
 

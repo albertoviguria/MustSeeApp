@@ -26,6 +26,14 @@ public class InterestPoint extends ParseObject{
         put("longitud",longitud);
     }
 
+    public String getId() {
+        return getString("id");
+    }
+
+    public void setId(String id) {
+        put("id",id);
+    }
+
     public String getNombre() {return getString("nombre");
     }
 
