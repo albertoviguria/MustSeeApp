@@ -41,6 +41,7 @@ public class InterestPoint extends ParseObject{
         put("nombre",nombre);
     }
 
+
     public String getDescripcion() {return getString("descripcion");
     }
 

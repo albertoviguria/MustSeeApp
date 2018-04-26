@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity
     private static final int SHOW_ABOUTUSACTIVITY = 3;
     private static final int SHOW_NEWPOINTACTIVITY = 4;
     private static final int SHOW_SHOWINTERESPOINTACTIVITY = 5;
+
     private static final int SHOW_SEARCH = 6;
     private static final int SHOW_HISTORIALSACTIVITY = 7;
     private MapView mapView;
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity
     private MapboxMap mapboxMap = null;
     InterestPoint aInterestPoint;
     Bundle bundle = new Bundle();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,14 +99,12 @@ public class MainActivity extends AppCompatActivity
                     public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
                         Log.v("Datos punto:" , marker.getPosition().toString());
                         Timber.e(marker.toString());
-
-
+                        
                         bundle.putDouble("latitud", marker.getPosition().getLatitude());
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
 
                         getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
-
                         return false;
                     }
                 });
@@ -336,6 +336,122 @@ public class MainActivity extends AppCompatActivity
         });
         this.getServerList();
     }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mapView.onStop();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
+    }
+
+    public void getServerList() {
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
+                if (e == null) {
+                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+
+                    for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
+                        InterestPoint punto = todoItemsAdapter.getItem(i);
+
+                        IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+                        Icon icon = iconFactory.fromResource(R.drawable.marker);
+
+                        mapboxMap.addMarker(new MarkerViewOptions()
+                                .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
+                                .icon(icon)
+                                .title(punto.getNombre()));
+
+                    }
+                } else {
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == SHOW_NEWPOINTACTIVITY) {
+                Bundle bundle = data.getExtras();
+                Double latitud = bundle.getDouble("latitud");
+                Double longitud = bundle.getDouble("longitud");
+                String name = bundle.getString("name");
+                newParseObject(name, latitud, longitud);
+            }
+            else{
+                if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
+                    Bundle bundle = data.getExtras();
+                    meterAHistorial(bundle);
+                }
+            }
+        }
+    }
+    private void newParseObject(String name, Double latitud, Double longitud) {
+
+        aInterestPoint = new InterestPoint();
+        aInterestPoint.setNombre(name);
+        aInterestPoint.setLatitud(latitud);
+        aInterestPoint.setLongitud(longitud);
+
+        aInterestPoint.saveInBackground(new SaveCallback() {
+            @Override
+            public void done(ParseException e) {
+                if (e == null) {
+                    todoItemsAdapter.notifyDataSetChanged();
+                    Log.v("object saved in server:", "newParseObject()");
+                } else {
+                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "newParseObject(): Object save failed  to server, reason: "+ e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+
+        });
+        this.getServerList();
+    }
+
+    public void meterAHistorial(Bundle bundle){}
 }
 
 
