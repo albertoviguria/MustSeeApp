@@ -47,6 +47,7 @@ public class SearchActivity extends Activity{
                                 InterestPoint item = (InterestPoint) lv.getItemAtPosition(position);
                                 Bundle bundle = new Bundle();
                                 bundle.putString("name", item.getNombre());
+                                bundle.putString("id",item.getId());
                                 bundle.putString("descripcion", item.getDescripcion());
                                 Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
                                 intent.putExtras(bundle);
