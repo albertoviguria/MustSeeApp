@@ -37,6 +37,7 @@ public class ShowHistorialActivity  extends Activity {
             setContentView(R.layout.show_historial);
             lv = findViewById(R.id.list);
 
+
             try{
                 List<String> lista;
                 //////////
