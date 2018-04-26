@@ -5,6 +5,7 @@ import com.parse.ParseObject;
 
 @ParseClassName("InterestPoint")
 public class InterestPoint extends ParseObject{
+    public String descripcion;
 
     public InterestPoint() {
     }
@@ -25,6 +26,14 @@ public class InterestPoint extends ParseObject{
         put("longitud",longitud);
     }
 
+    public String getId() {
+        return getString("id");
+    }
+
+    public void setId(String id) {
+        put("id",id);
+    }
+
     public String getNombre() {return getString("nombre");
     }
 
@@ -32,8 +41,16 @@ public class InterestPoint extends ParseObject{
         put("nombre",nombre);
     }
 
+
+    public String getDescripcion() {return getString("descripcion");
+    }
+
+    public void setDescription(String description) {
+        put("descripcion",description);
+    }
+
     @Override
     public String toString() {
-        return this.getNombre()+" "+this.getLatitud()+" "+this.getLongitud();
+        return this.getNombre()+" ";
     }
 }

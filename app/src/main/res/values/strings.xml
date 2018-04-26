@@ -13,8 +13,14 @@
     <string name="nombre2">Alberto Viguria Echauri</string>
 
     <string name="newpoint">Introduce los datos del nuevo Punto de Interés</string>
+    <string name="desc">Descripción</string>
     <string name="newname">Nombre del Punto</string>
     <string name="button_add_location">Añadir punto</string>
+
+    <string name="buscar">Buscar</string>
+
+    <string name="Historial">Historial</string>
+    <string name="Visitado">Visitado</string>
 
     <string name="button_add_historial">Añadir a historial</string>
 

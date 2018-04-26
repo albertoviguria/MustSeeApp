@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -14,7 +13,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
@@ -34,9 +32,9 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
 import java.util.List;
+import java.util.UUID;
 
 import see.must.mustseeapp.Model.InterestPoint;
-import see.must.mustseeapp.Model.ShowInteresPointActivity;
 import timber.log.Timber;
 
 
@@ -46,10 +44,15 @@ public class MainActivity extends AppCompatActivity
     private static final int SHOW_ABOUTUSACTIVITY = 3;
     private static final int SHOW_NEWPOINTACTIVITY = 4;
     private static final int SHOW_SHOWINTERESPOINTACTIVITY = 5;
+
+    private static final int SHOW_SEARCH = 6;
+    private static final int SHOW_HISTORIALSACTIVITY = 7;
     private MapView mapView;
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
     InterestPoint aInterestPoint;
+    Bundle bundle = new Bundle();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,20 +99,12 @@ public class MainActivity extends AppCompatActivity
                     public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
                         Log.v("Datos punto:" , marker.getPosition().toString());
                         Timber.e(marker.toString());
-
-                        Bundle bundle = new Bundle();
+                        
                         bundle.putDouble("latitud", marker.getPosition().getLatitude());
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
 
-                        //Obtener el objeto
-                        //bundle.putString("descripcion",)
-                        //imagen
-
-                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
-                        intent.putExtras(bundle);
-                        startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
-
+                        getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
                         return false;
                     }
                 });
@@ -124,8 +119,9 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                //BUSCADOR AQUÍ QUE LLAMA A LAYOUT PARA LISTADO
+                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
+                startActivityForResult(intent, SHOW_SEARCH);
             }
         });
 
@@ -150,40 +146,16 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.buscar) {
-            // Handle the camera action
-        } else if (id == R.id.historial) {
-
+        if (id == R.id.historial) {
+            Intent intent = new Intent(this, ShowHistorialActivity.class);
+            startActivityForResult(intent, SHOW_HISTORIALSACTIVITY);
         } else if (id == R.id.aboutUs) {
-
             Intent intent = new Intent(this, AboutUsActivity.class);
             startActivityForResult(intent, SHOW_ABOUTUSACTIVITY);
         }
@@ -191,6 +163,178 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mapView.onStart();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        mapView.onStop();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        mapView.onLowMemory();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mapView.onDestroy();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mapView.onSaveInstanceState(outState);
+    }
+
+    public void getServerList() {
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
+                if (e == null) {
+                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+
+                    for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
+                        InterestPoint punto = todoItemsAdapter.getItem(i);
+
+                        IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+                        Icon icon = iconFactory.fromResource(R.drawable.marker);
+
+                        mapboxMap.addMarker(new MarkerViewOptions()
+                                .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
+                                .icon(icon)
+                                .title(punto.getNombre()));
+
+                    }
+                } else {
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    public void getInterestPointServer(String name, Double latitud, Double longitud, final int n) {
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.whereEqualTo("nombre", name);
+        query.whereEqualTo("latitud", latitud);
+        query.whereEqualTo("longitud", longitud);
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
+                if (e == null) {
+                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                    if (todoItemsAdapter.getCount() == 1) {
+                        aInterestPoint = todoItemsAdapter.getItem(0);
+                        aInterestPoint.descripcion = aInterestPoint.getDescripcion();
+                        bundle.putString("descripcion", aInterestPoint.descripcion);
+                        bundle.putString("id", aInterestPoint.getId());
+                        //imagen
+
+                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                        intent.putExtras(bundle);
+                        startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
+                    }
+                } else {
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == Activity.RESULT_OK) {
+            if (requestCode == SHOW_NEWPOINTACTIVITY) {
+                Bundle bundle = data.getExtras();
+                Double latitud = bundle.getDouble("latitud");
+                Double longitud = bundle.getDouble("longitud");
+                String name = bundle.getString("name");
+                String description = bundle.getString("description");
+                String id = bundle.getString("id");
+                newParseObject(name, description, latitud, longitud,id);
+            }
+            else{
+                if(requestCode == SHOW_SEARCH){
+                    Bundle bundle = data.getExtras();
+                    String nombre = bundle.getString("name");
+                    getInterestPointServer(nombre,-1.,-1.,0);
+                }
+            }
+        }
+    }
+    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id) {
+
+        aInterestPoint = new InterestPoint();
+        aInterestPoint.setNombre(name);
+        aInterestPoint.setLatitud(latitud);
+        aInterestPoint.setLongitud(longitud);
+        aInterestPoint.setDescription(description);
+
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.whereEqualTo("id", id);
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
+                if (e == null) {
+                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                    if (todoItemsAdapter.getCount() > 0) {
+                        String uniqueId = UUID.randomUUID().toString();
+                        newParseObject(name, description, latitud, longitud,uniqueId);
+                    }
+                    else{
+                        aInterestPoint.setId(id);
+                        aInterestPoint.saveInBackground(new SaveCallback() {
+                            @Override
+                            public void done(ParseException e) {
+                                if (e == null) {
+                                    todoItemsAdapter.notifyDataSetChanged();
+                                    Log.v("object saved in server:", "newParseObject()");
+                                    //display file saved message
+                                    Toast.makeText(getBaseContext(), "Punto de Interés creado correctamente!", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
+                                    //display file saved message
+                                    Toast.makeText(getBaseContext(), "El Punto de Interés no se ha creado!", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                        });
+                    }
+                } else {
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        this.getServerList();
     }
 
     @Override
