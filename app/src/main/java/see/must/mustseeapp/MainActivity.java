@@ -2,6 +2,8 @@ package see.must.mustseeapp;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -28,9 +30,12 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
+
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -416,7 +421,17 @@ public class MainActivity extends AppCompatActivity
                 Double latitud = bundle.getDouble("latitud");
                 Double longitud = bundle.getDouble("longitud");
                 String name = bundle.getString("name");
-                newParseObject(name, latitud, longitud);
+                String filePath = bundle.getString("imagePath");
+
+                Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                // Compress image to lower quality scale 1 - 100
+                bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+                byte[] imageFileData = stream.toByteArray();
+
+                ParseFile image = new ParseFile(name+".jpg", imageFileData);
+                image.saveInBackground();
+                newParseObject(name, latitud, longitud, image);
             }
             else{
                 if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
@@ -426,13 +441,14 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
-    private void newParseObject(String name, Double latitud, Double longitud) {
+    private void newParseObject(String name, Double latitud, Double longitud, ParseFile image) {
 
         aInterestPoint = new InterestPoint();
         aInterestPoint.setNombre(name);
         aInterestPoint.setLatitud(latitud);
         aInterestPoint.setLongitud(longitud);
-
+        image.saveInBackground();
+        aInterestPoint.setImage(image);
         aInterestPoint.saveInBackground(new SaveCallback() {
             @Override
             public void done(ParseException e) {
