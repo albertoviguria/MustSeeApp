@@ -253,8 +253,7 @@ public class MainActivity extends AppCompatActivity
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
                     if (todoItemsAdapter.getCount() == 1) {
                         aInterestPoint = todoItemsAdapter.getItem(0);
-                        aInterestPoint.descripcion = aInterestPoint.getDescripcion();
-                        bundle.putString("descripcion", aInterestPoint.descripcion);
+                        bundle.putString("descripcion", aInterestPoint.getDescripcion());
                         bundle.putString("id", aInterestPoint.getId());
                         //imagen
 
@@ -282,7 +281,18 @@ public class MainActivity extends AppCompatActivity
                 String name = bundle.getString("name");
                 String description = bundle.getString("description");
                 String id = bundle.getString("id");
-                newParseObject(name, description, latitud, longitud,id);
+
+                String filePath = bundle.getString("imagePath");
+                Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                // Compress image to lower quality scale 1 - 100
+                bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+                byte[] imageFileData = stream.toByteArray();
+
+                ParseFile image = new ParseFile(name+".jpg", imageFileData);
+                image.saveInBackground();
+
+                newParseObject(name, description, latitud, longitud, id, image);
             }
             else{
                 if(requestCode == SHOW_SEARCH){
@@ -293,13 +303,14 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
-    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id) {
+    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id, final ParseFile image) {
 
         aInterestPoint = new InterestPoint();
         aInterestPoint.setNombre(name);
         aInterestPoint.setLatitud(latitud);
         aInterestPoint.setLongitud(longitud);
         aInterestPoint.setDescription(description);
+        aInterestPoint.setImage(image);
 
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.whereEqualTo("id", id);
@@ -309,7 +320,7 @@ public class MainActivity extends AppCompatActivity
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
                     if (todoItemsAdapter.getCount() > 0) {
                         String uniqueId = UUID.randomUUID().toString();
-                        newParseObject(name, description, latitud, longitud,uniqueId);
+                        newParseObject(name, description, latitud, longitud,uniqueId, image);
                     }
                     else{
                         aInterestPoint.setId(id);
@@ -338,131 +349,6 @@ public class MainActivity extends AppCompatActivity
                             Toast.LENGTH_SHORT).show();
                 }
             }
-        });
-        this.getServerList();
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        mapView.onStart();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        mapView.onResume();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        mapView.onPause();
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        mapView.onStop();
-    }
-
-    @Override
-    public void onLowMemory() {
-        super.onLowMemory();
-        mapView.onLowMemory();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mapView.onDestroy();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        mapView.onSaveInstanceState(outState);
-    }
-
-    public void getServerList() {
-        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
-        query.findInBackground(new FindCallback<InterestPoint>() {
-            public void done(List<InterestPoint> objects, ParseException e) {
-                if (e == null) {
-                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
-
-                    for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
-                        InterestPoint punto = todoItemsAdapter.getItem(i);
-
-                        IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
-                        Icon icon = iconFactory.fromResource(R.drawable.marker);
-
-                        mapboxMap.addMarker(new MarkerViewOptions()
-                                .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
-                                .icon(icon)
-                                .title(punto.getNombre()));
-
-                    }
-                } else {
-                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
-                    Toast.makeText(
-                            getBaseContext(),
-                            "getServerList(): error  query, reason: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-    }
-
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == SHOW_NEWPOINTACTIVITY) {
-                Bundle bundle = data.getExtras();
-                Double latitud = bundle.getDouble("latitud");
-                Double longitud = bundle.getDouble("longitud");
-                String name = bundle.getString("name");
-                String filePath = bundle.getString("imagePath");
-
-                Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                // Compress image to lower quality scale 1 - 100
-                bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
-                byte[] imageFileData = stream.toByteArray();
-
-                ParseFile image = new ParseFile(name+".jpg", imageFileData);
-                image.saveInBackground();
-                newParseObject(name, latitud, longitud, image);
-            }
-            else{
-                if (requestCode == SHOW_SHOWINTERESPOINTACTIVITY){
-                    Bundle bundle = data.getExtras();
-                    meterAHistorial(bundle);
-                }
-            }
-        }
-    }
-    private void newParseObject(String name, Double latitud, Double longitud, ParseFile image) {
-
-        aInterestPoint = new InterestPoint();
-        aInterestPoint.setNombre(name);
-        aInterestPoint.setLatitud(latitud);
-        aInterestPoint.setLongitud(longitud);
-        image.saveInBackground();
-        aInterestPoint.setImage(image);
-        aInterestPoint.saveInBackground(new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
-                if (e == null) {
-                    todoItemsAdapter.notifyDataSetChanged();
-                    Log.v("object saved in server:", "newParseObject()");
-                } else {
-                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
-                    Toast.makeText(
-                            getBaseContext(),
-                            "newParseObject(): Object save failed  to server, reason: "+ e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
-            }
-
         });
         this.getServerList();
     }
