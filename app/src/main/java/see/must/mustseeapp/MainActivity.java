@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity
                     .server("https://mustseeapp.herokuapp.com/parse/")
                     .build());
         } catch (IllegalStateException e) {
+            e.printStackTrace();
         }
 
         mapView.getMapAsync(new OnMapReadyCallback() {
@@ -103,7 +104,6 @@ public class MainActivity extends AppCompatActivity
                     public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
                         Log.v("Datos punto:" , marker.getPosition().toString());
                         Timber.e(marker.toString());
-
                         bundle.putDouble("latitud", marker.getPosition().getLatitude());
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
@@ -359,6 +359,8 @@ public class MainActivity extends AppCompatActivity
         });
         this.getServerList();
     }
+
+    public void meterAHistorial(Bundle bundle){}
 }
 
 

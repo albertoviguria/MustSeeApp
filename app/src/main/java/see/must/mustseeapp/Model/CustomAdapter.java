@@ -40,7 +40,6 @@ public class CustomAdapter extends ArrayAdapter<InterestPoint>{
             Bitmap bmp = BitmapFactory.decodeByteArray(images.get(position), 0, images.get(position).length);
             imageView.setImageBitmap(bmp);
         }
-
         return rowView;
     }
 }
