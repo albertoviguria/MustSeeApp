@@ -58,9 +58,6 @@ public class InterestPoint extends ParseObject{
         this.imagen = image;
     }
 
-    public String getImage() {return getString("image");
-    }
-
     @Override
     public String toString() {
         return this.getNombre()+" ";
