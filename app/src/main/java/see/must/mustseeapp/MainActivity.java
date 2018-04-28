@@ -2,6 +2,8 @@ package see.must.mustseeapp;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -28,9 +30,12 @@ import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.parse.FindCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.SaveCallback;
+
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +49,7 @@ public class MainActivity extends AppCompatActivity
     private static final int SHOW_ABOUTUSACTIVITY = 3;
     private static final int SHOW_NEWPOINTACTIVITY = 4;
     private static final int SHOW_SHOWINTERESPOINTACTIVITY = 5;
+
     private static final int SHOW_SEARCH = 6;
     private static final int SHOW_HISTORIALSACTIVITY = 7;
     private MapView mapView;
@@ -51,6 +57,7 @@ public class MainActivity extends AppCompatActivity
     private MapboxMap mapboxMap = null;
     InterestPoint aInterestPoint;
     Bundle bundle = new Bundle();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +77,6 @@ public class MainActivity extends AppCompatActivity
                     .server("https://mustseeapp.herokuapp.com/parse/")
                     .build());
         } catch (IllegalStateException e) {
-            e.printStackTrace();
         }
 
         mapView.getMapAsync(new OnMapReadyCallback() {
@@ -98,13 +104,11 @@ public class MainActivity extends AppCompatActivity
                         Log.v("Datos punto:" , marker.getPosition().toString());
                         Timber.e(marker.toString());
 
-
                         bundle.putDouble("latitud", marker.getPosition().getLatitude());
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
 
                         getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
-
                         return false;
                     }
                 });
@@ -119,7 +123,6 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //BUSCADOR AQUÍ QUE LLAMA A LAYOUT PARA LISTADO
                 Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
                 startActivityForResult(intent, SHOW_SEARCH);
             }
@@ -248,10 +251,8 @@ public class MainActivity extends AppCompatActivity
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
                     if (todoItemsAdapter.getCount() == 1) {
                         aInterestPoint = todoItemsAdapter.getItem(0);
-                        aInterestPoint.descripcion = aInterestPoint.getDescripcion();
-                        bundle.putString("descripcion", aInterestPoint.descripcion);
+                        bundle.putString("descripcion", aInterestPoint.getDescripcion());
                         bundle.putString("id", aInterestPoint.getId());
-                        //imagen
 
                         Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
                         intent.putExtras(bundle);
@@ -271,13 +272,34 @@ public class MainActivity extends AppCompatActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == SHOW_NEWPOINTACTIVITY) {
-                Bundle bundle = data.getExtras();
-                Double latitud = bundle.getDouble("latitud");
-                Double longitud = bundle.getDouble("longitud");
-                String name = bundle.getString("name");
-                String description = bundle.getString("description");
-                String id = bundle.getString("id");
-                newParseObject(name, description, latitud, longitud,id);
+                try {
+                    Bundle bundle = data.getExtras();
+                    Double latitud = bundle.getDouble("latitud");
+                    Double longitud = bundle.getDouble("longitud");
+                    String name = bundle.getString("name");
+                    String description = bundle.getString("description");
+                    String id = bundle.getString("id");
+
+                    if(name.isEmpty() | description.isEmpty()){
+                        Toast.makeText(getBaseContext(), "Algún campo no ha sido rellenado correctamente!", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        String filePath = bundle.getString("imagePath");
+                        Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        // Compress image to lower quality scale 1 - 100
+                        bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+                        byte[] imageFileData = stream.toByteArray();
+
+                        ParseFile image = new ParseFile(name + ".jpg", imageFileData);
+                        image.saveInBackground();
+
+                        newParseObject(name, description, latitud, longitud, id, image);
+                    }
+                }
+                catch(Exception e){
+                    Toast.makeText(getBaseContext(), "Algún campo no ha sido rellenado correctamente!", Toast.LENGTH_SHORT).show();
+                }
             }
             else{
                 if(requestCode == SHOW_SEARCH){
@@ -288,13 +310,14 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
-    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id) {
+    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id, final ParseFile image) {
 
         aInterestPoint = new InterestPoint();
         aInterestPoint.setNombre(name);
         aInterestPoint.setLatitud(latitud);
         aInterestPoint.setLongitud(longitud);
         aInterestPoint.setDescription(description);
+        aInterestPoint.setImage(image);
 
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.whereEqualTo("id", id);
@@ -304,7 +327,7 @@ public class MainActivity extends AppCompatActivity
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
                     if (todoItemsAdapter.getCount() > 0) {
                         String uniqueId = UUID.randomUUID().toString();
-                        newParseObject(name, description, latitud, longitud,uniqueId);
+                        newParseObject(name, description, latitud, longitud,uniqueId, image);
                     }
                     else{
                         aInterestPoint.setId(id);
