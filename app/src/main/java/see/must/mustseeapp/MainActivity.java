@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -28,6 +30,7 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.parse.FindCallback;
+import com.parse.GetDataCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseFile;
@@ -216,18 +219,33 @@ public class MainActivity extends AppCompatActivity
             public void done(List<InterestPoint> objects, ParseException e) {
                 if (e == null) {
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
-
+                    final IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
                     for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
-                        InterestPoint punto = todoItemsAdapter.getItem(i);
+                        final InterestPoint punto = todoItemsAdapter.getItem(i);
 
-                        IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
-                        Icon icon = iconFactory.fromResource(R.drawable.marker);
+                        ParseFile iconImage = (ParseFile)punto.get("icon");
 
-                        mapboxMap.addMarker(new MarkerViewOptions()
-                                .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
-                                .icon(icon)
-                                .title(punto.getNombre()));
-
+                        iconImage.getDataInBackground(new GetDataCallback() {
+                            public void done(byte[] data, ParseException e) {
+                                if (e == null) {
+                                    Bitmap iconBm = BitmapFactory.decodeByteArray(data, 0, data.length);
+                                    Bitmap overlayBm = BitmapFactory.decodeResource(getResources(), R.drawable.icon_overlay);
+                                    Log.v("imagen size:", String.valueOf(iconBm.getWidth()));
+                                    Log.v("overlay size:", String.valueOf(overlayBm.getWidth()));
+                                    Bitmap totalBm = Bitmap.createBitmap(overlayBm.getWidth(), overlayBm.getHeight(), overlayBm.getConfig());
+                                    Canvas canvas = new Canvas(totalBm);
+                                    canvas.drawBitmap(iconBm, new Matrix(), null);
+                                    canvas.drawBitmap(overlayBm, 0, 0, null);
+                                    mapboxMap.addMarker(new MarkerViewOptions()
+                                            .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
+                                            .icon(iconFactory.fromBitmap(totalBm))
+                                            .title(punto.getNombre())
+                                    );
+                                } else {
+                                    // something went wrong
+                                }
+                            }
+                        });
                     }
                 } else {
                     Log.v("error query, reason: " + e.getMessage(), "getServerList()");
@@ -286,15 +304,23 @@ public class MainActivity extends AppCompatActivity
                     else {
                         String filePath = bundle.getString("imagePath");
                         Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
+                        Bitmap iconBitmapToUpload = Bitmap.createScaledBitmap(bitmapToUpload, 150, 150, true);
+
                         ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        ByteArrayOutputStream iconStream = new ByteArrayOutputStream();
                         // Compress image to lower quality scale 1 - 100
                         bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+                        iconBitmapToUpload.compress(Bitmap.CompressFormat.PNG, 100, iconStream);
+
                         byte[] imageFileData = stream.toByteArray();
+                        byte[] iconFileData = iconStream.toByteArray();
 
                         ParseFile image = new ParseFile(name + ".jpg", imageFileData);
+                        ParseFile icon = new ParseFile(name + "_icon.png", iconFileData);
                         image.saveInBackground();
+                        icon.saveInBackground();
 
-                        newParseObject(name, description, latitud, longitud, id, image);
+                        newParseObject(name, description, latitud, longitud, id, image, icon);
                     }
                 }
                 catch(Exception e){
@@ -310,7 +336,7 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
-    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id, final ParseFile image) {
+    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id, final ParseFile image, final ParseFile icon) {
 
         aInterestPoint = new InterestPoint();
         aInterestPoint.setNombre(name);
@@ -318,6 +344,7 @@ public class MainActivity extends AppCompatActivity
         aInterestPoint.setLongitud(longitud);
         aInterestPoint.setDescription(description);
         aInterestPoint.setImage(image);
+        aInterestPoint.setIcon(icon);
 
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.whereEqualTo("id", id);
@@ -327,7 +354,7 @@ public class MainActivity extends AppCompatActivity
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
                     if (todoItemsAdapter.getCount() > 0) {
                         String uniqueId = UUID.randomUUID().toString();
-                        newParseObject(name, description, latitud, longitud,uniqueId, image);
+                        newParseObject(name, description, latitud, longitud, uniqueId, image, icon);
                     }
                     else{
                         aInterestPoint.setId(id);

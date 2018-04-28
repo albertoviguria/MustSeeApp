@@ -9,7 +9,7 @@ import com.parse.ParseObject;
 
 @ParseClassName("InterestPoint")
 public class InterestPoint extends ParseObject{
-    public static ParseFile imagen;
+
 
     public InterestPoint() {
     }
@@ -55,7 +55,10 @@ public class InterestPoint extends ParseObject{
 
     public void setImage(ParseFile image) {
         put("image", image);
-        this.imagen = image;
+    }
+
+    public void setIcon(ParseFile icon) {
+        put("icon", icon);
     }
 
     @Override
