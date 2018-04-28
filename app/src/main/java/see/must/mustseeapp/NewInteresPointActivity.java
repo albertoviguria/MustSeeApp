@@ -38,7 +38,7 @@ public class NewInteresPointActivity extends Activity {
                 ActivityCompat.requestPermissions(NewInteresPointActivity.this,
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_REQUEST_READ_CONTACTS);
-                } else {
+            } else {
                 Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
                 photoPickerIntent.setType("image/*");
                 startActivityForResult(photoPickerIntent, 1);
@@ -69,7 +69,6 @@ public class NewInteresPointActivity extends Activity {
                         //NOT IN REQUIRED FORMAT
                     }
                 } catch (Exception e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }

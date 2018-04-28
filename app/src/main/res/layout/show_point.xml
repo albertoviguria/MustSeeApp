@@ -57,7 +57,7 @@
         app:layout_constraintTop_toTopOf="@+id/descripcion" />
 
     <ImageView
-        android:id="@+id/imageView2"
+        android:id="@+id/pic"
         android:layout_width="match_parent"
         android:layout_height="200dp"
         tools:layout_editor_absoluteX="0dp"

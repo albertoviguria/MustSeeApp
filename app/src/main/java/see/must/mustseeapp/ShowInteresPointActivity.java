@@ -2,16 +2,21 @@ package see.must.mustseeapp;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.parse.FindCallback;
+import com.parse.GetDataCallback;
 import com.parse.ParseException;
+import com.parse.ParseFile;
 import com.parse.ParseQuery;
 
 import java.io.File;
@@ -32,37 +37,63 @@ public class ShowInteresPointActivity extends Activity {
         setContentView(R.layout.show_point);
         Intent intent = getIntent();
         bundle = intent.getExtras();
-        String nombre = bundle.getString("name");
-        String descripcion = bundle.getString("descripcion");
         id = bundle.getString("id");
 
-        TextView titulo = findViewById(R.id.titulo);
-        titulo.setText(nombre);
-        TextView desc = findViewById(R.id.descripcion);
-        CheckBox cbox = findViewById(R.id.checkBox);
-        cbox.setChecked(false);
-        try {
-            file = getFileStreamPath("historial.txt");
-            List<String> lista;
-            if (!file.exists()) {
-                file.createNewFile();
+        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+        query.whereEqualTo("id", id);
+        query.findInBackground(new FindCallback<InterestPoint>() {
+            public void done(List<InterestPoint> objects, ParseException e) {
+                if (e == null) {
+                    ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                    if (todoItemsAdapter.getCount() == 1) {
+                        final InterestPoint aInterestPoint = (InterestPoint) todoItemsAdapter.getItem(0);
+                        ParseFile applicantResume = aInterestPoint.imagen;
+                        applicantResume.getDataInBackground(new GetDataCallback() {
+                            public void done(byte[] data, ParseException e) {
+                                if (e == null) {
+                                    Log.v("1 imagen con e null", "d hnj");
+                                    ImageView espacio = findViewById(R.id.pic);
+                                    TextView titulo = findViewById(R.id.titulo);
+                                    titulo.setText(aInterestPoint.getNombre());
+                                    Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+                                    espacio.setImageBitmap(bmp);
+                                    TextView desc = findViewById(R.id.descripcion);
+                                    CheckBox cbox = findViewById(R.id.checkBox);
+                                    cbox.setChecked(false);
+                                    try {
+                                        file = getFileStreamPath("historial.txt");
+                                        List<String> lista;
+                                        if (!file.exists()) {
+                                            file.createNewFile();
+                                        }
+
+                                        Scanner scan = new Scanner(file);
+
+                                        String line = scan.nextLine();
+                                        String[] listado = line.split("[|]");
+                                        lista = Arrays.asList(listado);
+                                        scan.close();
+
+                                        if (lista.contains(id)) {
+                                            cbox.setChecked(true);
+                                        }
+                                    }
+                                    catch(Exception ex){
+                                    }
+                                    desc.setText( aInterestPoint.getDescripcion());
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    Toast.makeText(
+                            getBaseContext(),
+                            "getServerList(): error  query, reason: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
             }
-
-            Scanner scan = new Scanner(file);
-
-            String line = scan.nextLine();
-            String[] listado = line.split("[|]");
-            lista = Arrays.asList(listado);
-            scan.close();
-
-            if (lista.contains(id)) {
-                cbox.setChecked(true);
-            }
-        }
-        catch(Exception ex){
-        }
-
-        desc.setText(descripcion);
+        });
     }
 
     public void insertarEnHistorial(View view) {

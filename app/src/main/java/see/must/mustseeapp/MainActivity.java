@@ -104,7 +104,6 @@ public class MainActivity extends AppCompatActivity
                     public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
                         Log.v("Datos punto:" , marker.getPosition().toString());
                         Timber.e(marker.toString());
-                        
                         bundle.putDouble("latitud", marker.getPosition().getLatitude());
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
@@ -124,7 +123,6 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //BUSCADOR AQUÍ QUE LLAMA A LAYOUT PARA LISTADO
                 Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
                 startActivityForResult(intent, SHOW_SEARCH);
             }
@@ -255,7 +253,6 @@ public class MainActivity extends AppCompatActivity
                         aInterestPoint = todoItemsAdapter.getItem(0);
                         bundle.putString("descripcion", aInterestPoint.getDescripcion());
                         bundle.putString("id", aInterestPoint.getId());
-                        //imagen
 
                         Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
                         intent.putExtras(bundle);
@@ -275,24 +272,34 @@ public class MainActivity extends AppCompatActivity
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == SHOW_NEWPOINTACTIVITY) {
-                Bundle bundle = data.getExtras();
-                Double latitud = bundle.getDouble("latitud");
-                Double longitud = bundle.getDouble("longitud");
-                String name = bundle.getString("name");
-                String description = bundle.getString("description");
-                String id = bundle.getString("id");
+                try {
+                    Bundle bundle = data.getExtras();
+                    Double latitud = bundle.getDouble("latitud");
+                    Double longitud = bundle.getDouble("longitud");
+                    String name = bundle.getString("name");
+                    String description = bundle.getString("description");
+                    String id = bundle.getString("id");
 
-                String filePath = bundle.getString("imagePath");
-                Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                // Compress image to lower quality scale 1 - 100
-                bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
-                byte[] imageFileData = stream.toByteArray();
+                    if(name.isEmpty() | description.isEmpty()){
+                        Toast.makeText(getBaseContext(), "Algún campo no ha sido rellenado correctamente!", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        String filePath = bundle.getString("imagePath");
+                        Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        // Compress image to lower quality scale 1 - 100
+                        bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+                        byte[] imageFileData = stream.toByteArray();
 
-                ParseFile image = new ParseFile(name+".jpg", imageFileData);
-                image.saveInBackground();
+                        ParseFile image = new ParseFile(name + ".jpg", imageFileData);
+                        image.saveInBackground();
 
-                newParseObject(name, description, latitud, longitud, id, image);
+                        newParseObject(name, description, latitud, longitud, id, image);
+                    }
+                }
+                catch(Exception e){
+                    Toast.makeText(getBaseContext(), "Algún campo no ha sido rellenado correctamente!", Toast.LENGTH_SHORT).show();
+                }
             }
             else{
                 if(requestCode == SHOW_SEARCH){

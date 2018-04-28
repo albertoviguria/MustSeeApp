@@ -1,5 +1,6 @@
 package see.must.mustseeapp.Model;
 
+import android.util.Log;
 import com.parse.GetDataCallback;
 import com.parse.ParseClassName;
 import com.parse.ParseException;
@@ -8,6 +9,7 @@ import com.parse.ParseObject;
 
 @ParseClassName("InterestPoint")
 public class InterestPoint extends ParseObject{
+    public static ParseFile imagen;
 
     public InterestPoint() {
     }
@@ -21,7 +23,7 @@ public class InterestPoint extends ParseObject{
     }
 
     public double getLongitud() {
-       return getDouble("longitud");
+        return getDouble("longitud");
     }
 
     public void setLongitud(double longitud) {
@@ -51,21 +53,14 @@ public class InterestPoint extends ParseObject{
         put("descripcion",description);
     }
 
-    public ParseFile getImage() {
-        ParseFile imagen = (ParseFile)get("image");
-        imagen.getDataInBackground(new GetDataCallback() {
-            public void done(byte[] data, ParseException e) {
-                if (e == null) {
-                    // data has the bytes for the resume
-                } else {
-                    // something went wrong
-                }
-            }
-        });
-        return imagen;
+    public void setImage(ParseFile image) {
+        put("image", image);
+        this.imagen = image;
     }
 
-    public void setImage(ParseFile image) { put("image", image); }
+    public String getImage() {return getString("image");
+    }
+
     @Override
     public String toString() {
         return this.getNombre()+" ";
