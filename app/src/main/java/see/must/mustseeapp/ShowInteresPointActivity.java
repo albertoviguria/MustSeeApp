@@ -44,10 +44,10 @@ public class ShowInteresPointActivity extends Activity {
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(List<InterestPoint> objects, ParseException e) {
                 if (e == null) {
-                    ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                    ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.show_point, R.id.titulo, objects);
                     if (todoItemsAdapter.getCount() == 1) {
                         final InterestPoint aInterestPoint = (InterestPoint) todoItemsAdapter.getItem(0);
-                        ParseFile applicantResume = aInterestPoint.imagen;
+                        ParseFile applicantResume = (ParseFile) objects.get(0).get("image");
                         applicantResume.getDataInBackground(new GetDataCallback() {
                             public void done(byte[] data, ParseException e) {
                                 if (e == null) {
