@@ -1,7 +1,6 @@
 package see.must.mustseeapp.Model;
 
 import android.util.Log;
-
 import com.parse.GetDataCallback;
 import com.parse.ParseClassName;
 import com.parse.ParseException;
