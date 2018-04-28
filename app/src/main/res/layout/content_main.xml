@@ -13,6 +13,9 @@
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        mapbox:mapbox_uiRotateGestures="true"/>
+        mapbox:mapbox_uiRotateGestures="true"
+        mapbox:mapbox_styleUrl="mapbox://styles/inigolerga/cjgjjquzd000o2smild9s14fb"
+        />
 
 </android.support.constraint.ConstraintLayout>
+
