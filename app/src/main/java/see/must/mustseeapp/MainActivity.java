@@ -45,6 +45,8 @@ import java.util.UUID;
 import see.must.mustseeapp.Model.InterestPoint;
 import timber.log.Timber;
 
+import static java.lang.Math.abs;
+
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -217,43 +219,43 @@ public class MainActivity extends AppCompatActivity
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(List<InterestPoint> objects, ParseException e) {
-                if (e == null) {
-                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
-                    final IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
-                    for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
-                        final InterestPoint punto = todoItemsAdapter.getItem(i);
+            if (e == null) {
+                todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                final IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+                for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
+                    final InterestPoint punto = todoItemsAdapter.getItem(i);
 
-                        ParseFile iconImage = (ParseFile)punto.get("icon");
+                    ParseFile iconImage = (ParseFile)punto.get("icon");
 
-                        iconImage.getDataInBackground(new GetDataCallback() {
-                            public void done(byte[] data, ParseException e) {
-                                if (e == null) {
-                                    Bitmap iconBm = BitmapFactory.decodeByteArray(data, 0, data.length);
-                                    Bitmap overlayBm = BitmapFactory.decodeResource(getResources(), R.drawable.icon_overlay);
-                                    Log.v("imagen size:", String.valueOf(iconBm.getWidth()));
-                                    Log.v("overlay size:", String.valueOf(overlayBm.getWidth()));
-                                    Bitmap totalBm = Bitmap.createBitmap(overlayBm.getWidth(), overlayBm.getHeight(), overlayBm.getConfig());
-                                    Canvas canvas = new Canvas(totalBm);
-                                    canvas.drawBitmap(iconBm, new Matrix(), null);
-                                    canvas.drawBitmap(overlayBm, 0, 0, null);
-                                    mapboxMap.addMarker(new MarkerViewOptions()
-                                            .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
-                                            .icon(iconFactory.fromBitmap(totalBm))
-                                            .title(punto.getNombre())
-                                    );
-                                } else {
-                                    // something went wrong
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
-                    Toast.makeText(
-                            getBaseContext(),
-                            "getServerList(): error  query, reason: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    iconImage.getDataInBackground(new GetDataCallback() {
+                        public void done(byte[] data, ParseException e) {
+                        if (e == null) {
+                            Bitmap iconBm = BitmapFactory.decodeByteArray(data, 0, data.length);
+                            Bitmap overlayBm = BitmapFactory.decodeResource(getResources(), R.drawable.icon_overlay);
+                            Log.v("imagen size:", String.valueOf(iconBm.getWidth()));
+                            Log.v("overlay size:", String.valueOf(overlayBm.getWidth()));
+                            Bitmap totalBm = Bitmap.createBitmap(overlayBm.getWidth(), overlayBm.getHeight(), overlayBm.getConfig());
+                            Canvas canvas = new Canvas(totalBm);
+                            canvas.drawBitmap(iconBm, new Matrix(), null);
+                            canvas.drawBitmap(overlayBm, 0, 0, null);
+                            mapboxMap.addMarker(new MarkerViewOptions()
+                                    .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
+                                    .icon(iconFactory.fromBitmap(totalBm))
+                                    .title(punto.getNombre())
+                            );
+                        } else {
+                            // something went wrong
+                        }
+                        }
+                    });
                 }
+            } else {
+                Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                Toast.makeText(
+                        getBaseContext(),
+                        "getServerList(): error  query, reason: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
             }
         });
     }
@@ -338,14 +340,6 @@ public class MainActivity extends AppCompatActivity
     }
     private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id, final ParseFile image, final ParseFile icon) {
 
-        aInterestPoint = new InterestPoint();
-        aInterestPoint.setNombre(name);
-        aInterestPoint.setLatitud(latitud);
-        aInterestPoint.setLongitud(longitud);
-        aInterestPoint.setDescription(description);
-        aInterestPoint.setImage(image);
-        aInterestPoint.setIcon(icon);
-
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.whereEqualTo("id", id);
         query.findInBackground(new FindCallback<InterestPoint>() {
@@ -357,39 +351,63 @@ public class MainActivity extends AppCompatActivity
                         newParseObject(name, description, latitud, longitud, uniqueId, image, icon);
                     }
                     else{
-                        aInterestPoint.setId(id);
-                        aInterestPoint.saveInBackground(new SaveCallback() {
-                            @Override
-                            public void done(ParseException e) {
+                        ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
+                        query.whereEqualTo("nombre", name);
+                        query.findInBackground(new FindCallback<InterestPoint>() {
+                            public void done(List<InterestPoint> objects, ParseException e) {
                                 if (e == null) {
-                                    todoItemsAdapter.notifyDataSetChanged();
-                                    Log.v("object saved in server:", "newParseObject()");
-                                    //display file saved message
-                                    Toast.makeText(getBaseContext(), "Punto de Interés creado correctamente!", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
-                                    //display file saved message
-                                    Toast.makeText(getBaseContext(), "El Punto de Interés no se ha creado!", Toast.LENGTH_SHORT).show();
+                                    Boolean guardar = true;
+                                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                                    if(todoItemsAdapter.getCount() != 0 ) {
+                                        for (int i = 0; i < todoItemsAdapter.getCount(); i = i + 1) {
+                                            InterestPoint aux = todoItemsAdapter.getItem(i);
+                                            Double distancia = abs(aux.getLatitud() - latitud) + abs((aux.getLongitud() - longitud));
+                                            if (distancia < 0.05) {
+                                                guardar = false;
+                                            }
+                                        }
+                                    }
+                                    if (todoItemsAdapter.getCount() == 0 | guardar) {
+                                        aInterestPoint = new InterestPoint();
+                                        aInterestPoint.setNombre(name);
+                                        aInterestPoint.setLatitud(latitud);
+                                        aInterestPoint.setLongitud(longitud);
+                                        aInterestPoint.setDescription(description);
+                                        aInterestPoint.setImage(image);
+                                        aInterestPoint.setIcon(icon);
+                                        aInterestPoint.setId(id);
+                                        aInterestPoint.saveInBackground(new SaveCallback() {
+                                            @Override
+                                            public void done(ParseException e) {
+                                                if (e == null) {
+                                                    todoItemsAdapter.notifyDataSetChanged();
+                                                    Log.v("object saved in server:", "newParseObject()");
+                                                    //display file saved message
+                                                    Toast.makeText(getBaseContext(), "Punto de Interés creado correctamente!", Toast.LENGTH_SHORT).show();
+                                                } else {
+                                                    Log.v("save failed, reason: " + e.getMessage(), "newParseObject()");
+                                                    //display file saved message
+                                                    Toast.makeText(getBaseContext(), "El Punto de Interés no se ha creado!", Toast.LENGTH_SHORT).show();
+                                                }
+                                            }
+                                        });
+                                    }
+                                    else{
+                                        Toast.makeText(getBaseContext(), "Ya existe un punto de interés con ese nombre en esta zona!", Toast.LENGTH_SHORT).show();
+                                    }
                                 }
                             }
-
                         });
                     }
                 } else {
                     Log.v("error query, reason: " + e.getMessage(), "getServerList()");
                     Toast.makeText(
-                            getBaseContext(),
-                            "getServerList(): error  query, reason: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                        getBaseContext(),
+                        "getServerList(): error  query, reason: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
                 }
             }
         });
         this.getServerList();
     }
-
-    public void meterAHistorial(Bundle bundle){}
 }
-
-
-
-
