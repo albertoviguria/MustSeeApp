@@ -14,9 +14,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.GetDataCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
+import com.parse.ParseObject;
 import com.parse.ParseQuery;
 
 import java.io.File;
@@ -40,57 +42,54 @@ public class ShowInteresPointActivity extends Activity {
         id = bundle.getString("id");
 
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
-        query.whereEqualTo("id", id);
-        query.findInBackground(new FindCallback<InterestPoint>() {
-            public void done(List<InterestPoint> objects, ParseException e) {
+        query.getInBackground(id, new GetCallback<InterestPoint>() {
+            public void done(final InterestPoint aInterestPoint, ParseException e) {
                 if (e == null) {
-                    ArrayAdapter todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.show_point, R.id.titulo, objects);
-                    if (todoItemsAdapter.getCount() == 1) {
-                        final InterestPoint aInterestPoint = (InterestPoint) todoItemsAdapter.getItem(0);
-                        ParseFile applicantResume = (ParseFile) objects.get(0).get("image");
-                        applicantResume.getDataInBackground(new GetDataCallback() {
-                            public void done(byte[] data, ParseException e) {
-                                if (e == null) {
-                                    Log.v("1 imagen con e null", "d hnj");
-                                    ImageView espacio = findViewById(R.id.pic);
-                                    TextView titulo = findViewById(R.id.titulo);
-                                    titulo.setText(aInterestPoint.getNombre());
-                                    Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
-                                    espacio.setImageBitmap(bmp);
-                                    TextView desc = findViewById(R.id.descripcion);
-                                    CheckBox cbox = findViewById(R.id.checkBox);
-                                    cbox.setChecked(false);
-                                    try {
-                                        file = getFileStreamPath("historial.txt");
-                                        List<String> lista;
-                                        if (!file.exists()) {
-                                            file.createNewFile();
-                                        }
+                    //final InterestPoint aInterestPoint  = (InterestPoint) object;
+                    ParseFile imagen = (ParseFile) aInterestPoint.get("image");
+                    imagen.getDataInBackground(new GetDataCallback() {
+                        public void done(byte[] data, ParseException e) {
+                        if (e == null) {
+                            Log.v("1 imagen con e null", "d hnj");
+                            ImageView espacio = findViewById(R.id.pic);
+                            TextView titulo = findViewById(R.id.titulo);
+                            titulo.setText(aInterestPoint.getNombre());
+                            Bitmap bmp = BitmapFactory.decodeByteArray(data, 0, data.length);
+                            espacio.setImageBitmap(bmp);
+                            TextView desc = findViewById(R.id.descripcion);
+                            CheckBox cbox = findViewById(R.id.checkBox);
+                            cbox.setChecked(false);
+                            try {
+                                file = getFileStreamPath("historial.txt");
+                                List<String> lista;
+                                if (!file.exists()) {
+                                    file.createNewFile();
+                                }
 
-                                        Scanner scan = new Scanner(file);
+                                Scanner scan = new Scanner(file);
 
-                                        String line = scan.nextLine();
-                                        String[] listado = line.split("[|]");
-                                        lista = Arrays.asList(listado);
-                                        scan.close();
+                                String line = scan.nextLine();
+                                String[] listado = line.split("[|]");
+                                lista = Arrays.asList(listado);
+                                scan.close();
 
-                                        if (lista.contains(id)) {
-                                            cbox.setChecked(true);
-                                        }
-                                    }
-                                    catch(Exception ex){
-                                    }
-                                    desc.setText( aInterestPoint.getDescripcion());
+                                if (lista.contains(id)) {
+                                    cbox.setChecked(true);
                                 }
                             }
-                        });
-                    }
+                            catch(Exception ex){
+                            }
+                            desc.setText( aInterestPoint.getDescripcion());
+                        }
+                        }
+                    });
                 } else {
-                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                    // something went wrong
+                    Log.v("error query, reason: ", e.getMessage()+id);
                     Toast.makeText(
-                            getBaseContext(),
-                            "getServerList(): error  query, reason: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                        getBaseContext(),
+                        "getServerList(): error  query, reason: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -100,66 +99,59 @@ public class ShowInteresPointActivity extends Activity {
         CheckBox cbox = findViewById(R.id.checkBox);
         cbox.setChecked(!cbox.isChecked());
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
-        query.whereEqualTo("id", id);
-        query.findInBackground(new FindCallback<InterestPoint>() {
-            public void done(List<InterestPoint> objects, ParseException e) {
+        query.getInBackground(id, new GetCallback<InterestPoint>() {
+            public void done(InterestPoint aInterestPoint, ParseException e) {
                 if (e == null) {
-                    ArrayAdapter<InterestPoint> todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
-                    if(todoItemsAdapter.getCount()>0){
-                        file = getFileStreamPath("historial.txt");
-                        try {
-                            List<String> lista;
-                            if (!file.exists()) {
-                                file.createNewFile();
-                            }
+                    file = getFileStreamPath("historial.txt");
+                    try {
+                        List<String> lista;
+                        if (!file.exists()) {
+                            file.createNewFile();
+                        }
 
-                            Scanner scan = new Scanner(file);
+                        Scanner scan = new Scanner(file);
 
-                            String line = scan.nextLine();
-                            String[] listado = line.split("[|]");
-                            lista = Arrays.asList(listado);
-                            scan.close();
+                        String line = scan.nextLine();
+                        String[] listado = line.split("[|]");
+                        lista = Arrays.asList(listado);
+                        scan.close();
 
-                            if(!lista.contains(id)) {
-                                FileOutputStream writer = openFileOutput(file.getName(),  MODE_APPEND | MODE_PRIVATE);
-                                id = id.concat("|");
-                                writer.write(id.getBytes());
-                                writer.close();
-
-                                //display file saved message
-                                Toast.makeText(getBaseContext(), "Punto de Interés añadido al Historial!", Toast.LENGTH_SHORT).show();
-                            }
-                            else{
-                                FileOutputStream writer = openFileOutput(file.getName(),  MODE_PRIVATE);
-                                for (String s : lista) {
-                                    if(!s.equals(id)) {
-                                        s = s.concat("|");
-                                        writer.write(s.getBytes());
-                                    }
-                                }
-                                writer.close();
-                                //display file saved message
-                                Toast.makeText(getBaseContext(), "Punto de Interés borrado del Historial!", Toast.LENGTH_SHORT).show();
-                            }
-
-                        } catch (Exception error) {
-                            try {
-                                FileOutputStream writer = openFileOutput(file.getName(), MODE_PRIVATE);
-                                id = id.concat("|");
-                                writer.write(id.getBytes());
-                                writer.close();
-
-                                //display file saved message
-                                Toast.makeText(getBaseContext(), "Punto de Interés añadido al Historial!", Toast.LENGTH_SHORT).show();
-                            }
-                            catch(Exception ex){}
+                        if(!lista.contains(id)) {
+                            FileOutputStream writer = openFileOutput(file.getName(),  MODE_APPEND | MODE_PRIVATE);
+                            id = id.concat("|");
+                            writer.write(id.getBytes());
+                            writer.close();
 
                             //display file saved message
                             Toast.makeText(getBaseContext(), "Punto de Interés añadido al Historial!", Toast.LENGTH_SHORT).show();
                         }
-                    }
-                    else{
-                        Log.v("error reason: no existe","");
+                        else{
+                            FileOutputStream writer = openFileOutput(file.getName(),  MODE_PRIVATE);
+                            for (String s : lista) {
+                                if(!s.equals(id)) {
+                                    s = s.concat("|");
+                                    writer.write(s.getBytes());
+                                }
+                            }
+                            writer.close();
+                            //display file saved message
+                            Toast.makeText(getBaseContext(), "Punto de Interés borrado del Historial!", Toast.LENGTH_SHORT).show();
+                        }
+
+                    } catch (Exception error) {
+                        try {
+                            FileOutputStream writer = openFileOutput(file.getName(), MODE_PRIVATE);
+                            id = id.concat("|");
+                            writer.write(id.getBytes());
+                            writer.close();
+
+                            //display file saved message
+                            Toast.makeText(getBaseContext(), "Punto de Interés añadido al Historial!", Toast.LENGTH_SHORT).show();
+                        }
+                        catch(Exception ex){}
+
+                        //display file saved message
+                        Toast.makeText(getBaseContext(), "Punto de Interés añadido al Historial!", Toast.LENGTH_SHORT).show();
                     }
                 }
                 else {
