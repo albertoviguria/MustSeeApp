@@ -1,14 +1,22 @@
 package see.must.mustseeapp;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -24,10 +32,17 @@ import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.services.android.telemetry.location.LocationEngine;
+import com.mapbox.services.android.telemetry.location.LocationEngineListener;
+import com.mapbox.services.android.telemetry.location.LocationEnginePriority;
+import com.mapbox.services.android.telemetry.location.LocationEngineProvider;
+import com.mapbox.services.android.telemetry.location.LostLocationEngine;
 import com.parse.FindCallback;
 import com.parse.GetDataCallback;
 import com.parse.Parse;
@@ -55,7 +70,10 @@ public class MainActivity extends AppCompatActivity
 
     private static final int SHOW_SEARCH = 6;
     private static final int SHOW_HISTORIALSACTIVITY = 7;
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 101;
     private MapView mapView;
+    private LocationEngine locationEngine;
+    private LocationEngineListener locationEngineListener;
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
     InterestPoint aInterestPoint;
@@ -70,6 +88,8 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
+        LocationEngineProvider locationEngineProvider = new LocationEngineProvider(this);
+        locationEngine = locationEngineProvider.obtainBestLocationEngineAvailable();
 
         try {
             ParseObject.registerSubclass(InterestPoint.class);
@@ -86,45 +106,46 @@ public class MainActivity extends AppCompatActivity
         mapView.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(MapboxMap map) {
-            mapboxMap = map;
+                mapboxMap = map;
+                checkLocationPermission();
 
-            getServerList();
+                getServerList();
 
-            mapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener() {
-                @Override
-                public void onMapClick(@NonNull LatLng point) {
-                Bundle bundle = new Bundle();
-                bundle.putDouble("latitud", point.getLatitude());
-                bundle.putDouble("longitud", point.getLongitude());
-                Intent intent = new Intent(getApplicationContext(), NewInteresPointActivity.class);
-                intent.putExtras(bundle);
-                startActivityForResult(intent, SHOW_NEWPOINTACTIVITY);
-                }
-            });
+                mapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener() {
+                    @Override
+                    public void onMapClick(@NonNull LatLng point) {
+                    Bundle bundle = new Bundle();
+                    bundle.putDouble("latitud", point.getLatitude());
+                    bundle.putDouble("longitud", point.getLongitude());
+                    Intent intent = new Intent(getApplicationContext(), NewInteresPointActivity.class);
+                    intent.putExtras(bundle);
+                    startActivityForResult(intent, SHOW_NEWPOINTACTIVITY);
+                    }
+                });
 
-            mapboxMap.getMarkerViewManager().setOnMarkerViewClickListener(new MapboxMap.OnMarkerViewClickListener() {
-                @Override
-                public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
-                Log.v("Datos punto:" , marker.getPosition().toString());
-                Timber.e(marker.toString());
-                bundle.putDouble("latitud", marker.getPosition().getLatitude());
-                bundle.putDouble("longitud", marker.getPosition().getLongitude());
-                bundle.putString("name", marker.getTitle().toString());
-
-                getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
-                return false;
-                }
-            });
-            mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
-                @Override
-                public boolean onInfoWindowClick(Marker marker) {
+                mapboxMap.getMarkerViewManager().setOnMarkerViewClickListener(new MapboxMap.OnMarkerViewClickListener() {
+                    @Override
+                    public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
+                    Log.v("Datos punto:" , marker.getPosition().toString());
+                    Timber.e(marker.toString());
                     bundle.putDouble("latitud", marker.getPosition().getLatitude());
                     bundle.putDouble("longitud", marker.getPosition().getLongitude());
                     bundle.putString("name", marker.getTitle().toString());
+
                     getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
                     return false;
-                }
-            });
+                    }
+                });
+                mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
+                    @Override
+                    public boolean onInfoWindowClick(Marker marker) {
+                        bundle.putDouble("latitud", marker.getPosition().getLatitude());
+                        bundle.putDouble("longitud", marker.getPosition().getLongitude());
+                        bundle.putString("name", marker.getTitle().toString());
+                        getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
+                        return false;
+                    }
+                });
             }
         });
 
@@ -388,5 +409,115 @@ public class MainActivity extends AppCompatActivity
             }
         });
         this.getServerList();
+    }
+    public void gotoUserLocation(){
+        @SuppressLint("MissingPermission") Location lastLocation = locationEngine.getLastLocation();
+        if (lastLocation != null) {
+            mapboxMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lastLocation), 12));
+        } else {
+            Log.v("location null", "");
+        }
+    }
+    public void gotoDefaultLocation(){
+        mapboxMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(42.8129371, -1.6465871), 12));
+    }
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                new AlertDialog.Builder(this)
+                        .setTitle("Acceso a localización")//R.string.title_location_permission
+                        .setMessage("Tu localización permanecerá privada y no se guardará en nuestro servidor.")//R.string.text_location_permission
+                        .setPositiveButton("ok", new DialogInterface.OnClickListener() {//R.string.ok
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        MY_PERMISSIONS_REQUEST_LOCATION);
+                            }
+                        })
+                        .create()
+                        .show();
+
+
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            if (locationEngineListener == null) {
+                locationEngineListener = new LocationEngineListener() {
+                    @SuppressLint("MissingPermission")
+                    @Override
+                    public void onConnected() {
+                        locationEngine.requestLocationUpdates();
+                    }
+
+                    @Override
+                    public void onLocationChanged(Location location) {
+
+                    }
+                };
+                locationEngine.addLocationEngineListener(locationEngineListener);
+            }
+            gotoUserLocation();
+            return true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // location-related task you need to do.
+                    if (ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+
+                        //Request location updates:
+                        locationEngineListener = new LocationEngineListener() {
+                            @SuppressLint("MissingPermission")
+                            @Override
+                            public void onConnected() {
+                                locationEngine.requestLocationUpdates();
+                            }
+
+                            @Override
+                            public void onLocationChanged(Location location) {
+
+                            }
+                        };
+                        locationEngine.addLocationEngineListener(locationEngineListener);
+                        gotoUserLocation();
+                    }
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    gotoDefaultLocation();
+                }
+                return;
+            }
+
+        }
     }
 }
