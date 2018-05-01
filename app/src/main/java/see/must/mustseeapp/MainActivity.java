@@ -344,8 +344,8 @@ public class MainActivity extends AppCompatActivity
                         byte[] imageFileData = stream.toByteArray();
                         byte[] iconFileData = iconStream.toByteArray();
 
-                        ParseFile image = new ParseFile(name + ".jpg", imageFileData);
-                        ParseFile icon = new ParseFile(name + "_icon.png", iconFileData);
+                        ParseFile image = new ParseFile("original.jpg", imageFileData);
+                        ParseFile icon = new ParseFile("icon.png", iconFileData);
                         image.saveInBackground();
                         icon.saveInBackground();
 
