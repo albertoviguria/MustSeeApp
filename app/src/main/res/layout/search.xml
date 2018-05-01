@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#E6E6E6"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <EditText
@@ -12,6 +13,7 @@
         android:layout_marginTop="16dp"
         android:ems="10"
         android:hint="@string/newname"
+        android:backgroundTint="#7401DF"
         app:layout_constraintBottom_toTopOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -28,6 +30,9 @@
         android:layout_marginTop="56dp"
         android:onClick="search"
         android:text="@string/buscar"
+        android:shape="oval"
+
+        android:background="#F2F2F2"
         app:layout_constraintLeft_toLeftOf="@+id/edit_search"
         app:layout_constraintRight_toRightOf="@+id/edit_search"
         app:layout_constraintStart_toEndOf="@+id/edit_search"

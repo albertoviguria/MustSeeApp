@@ -1,12 +1,22 @@
 package see.must.mustseeapp;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -19,15 +29,19 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.Toast;
 import com.mapbox.mapboxsdk.Mapbox;
-import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
-import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.services.android.telemetry.location.LocationEngine;
+import com.mapbox.services.android.telemetry.location.LocationEngineListener;
+import com.mapbox.services.android.telemetry.location.LocationEngineProvider;
 import com.parse.FindCallback;
+import com.parse.GetDataCallback;
 import com.parse.Parse;
 import com.parse.ParseException;
 import com.parse.ParseFile;
@@ -37,10 +51,11 @@ import com.parse.SaveCallback;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
-import java.util.UUID;
 
 import see.must.mustseeapp.Model.InterestPoint;
 import timber.log.Timber;
+
+import static java.lang.Math.abs;
 
 
 public class MainActivity extends AppCompatActivity
@@ -52,7 +67,10 @@ public class MainActivity extends AppCompatActivity
 
     private static final int SHOW_SEARCH = 6;
     private static final int SHOW_HISTORIALSACTIVITY = 7;
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 101;
     private MapView mapView;
+    private LocationEngine locationEngine;
+    private LocationEngineListener locationEngineListener;
     ArrayAdapter<InterestPoint> todoItemsAdapter;
     private MapboxMap mapboxMap = null;
     InterestPoint aInterestPoint;
@@ -67,15 +85,17 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
+        LocationEngineProvider locationEngineProvider = new LocationEngineProvider(this);
+        locationEngine = locationEngineProvider.obtainBestLocationEngineAvailable();
 
         try {
             ParseObject.registerSubclass(InterestPoint.class);
 
             Parse.initialize(new Parse.Configuration.Builder(getApplicationContext())
-                    .applicationId("myAppId")
-                    .clientKey("empty")
-                    .server("https://mustseeapp.herokuapp.com/parse/")
-                    .build());
+                .applicationId("myAppId")
+                .clientKey("empty")
+                .server("https://mustseeapp.herokuapp.com/parse/")
+                .build());
         } catch (IllegalStateException e) {
             e.printStackTrace();
         }
@@ -84,37 +104,47 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onMapReady(MapboxMap map) {
                 mapboxMap = map;
+                checkLocationPermission();
 
                 getServerList();
 
                 mapboxMap.setOnMapClickListener(new MapboxMap.OnMapClickListener() {
                     @Override
                     public void onMapClick(@NonNull LatLng point) {
-                        Bundle bundle = new Bundle();
-                        bundle.putDouble("latitud", point.getLatitude());
-                        bundle.putDouble("longitud", point.getLongitude());
-                        Intent intent = new Intent(getApplicationContext(), NewInteresPointActivity.class);
-                        intent.putExtras(bundle);
-                        startActivityForResult(intent, SHOW_NEWPOINTACTIVITY);
+                    Bundle bundle = new Bundle();
+                    bundle.putDouble("latitud", point.getLatitude());
+                    bundle.putDouble("longitud", point.getLongitude());
+                    Intent intent = new Intent(getApplicationContext(), NewInteresPointActivity.class);
+                    intent.putExtras(bundle);
+                    startActivityForResult(intent, SHOW_NEWPOINTACTIVITY);
                     }
                 });
 
                 mapboxMap.getMarkerViewManager().setOnMarkerViewClickListener(new MapboxMap.OnMarkerViewClickListener() {
                     @Override
                     public boolean onMarkerClick(@NonNull Marker marker, @NonNull View view, @NonNull MapboxMap.MarkerViewAdapter adapter) {
-                        Log.v("Datos punto:" , marker.getPosition().toString());
-                        Timber.e(marker.toString());
+                    Log.v("Datos punto:" , marker.getPosition().toString());
+                    Timber.e(marker.toString());
+                    bundle.putDouble("latitud", marker.getPosition().getLatitude());
+                    bundle.putDouble("longitud", marker.getPosition().getLongitude());
+                    bundle.putString("name", marker.getTitle().toString());
+
+                    getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
+                    return false;
+                    }
+                });
+                mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
+                    @Override
+                    public boolean onInfoWindowClick(Marker marker) {
                         bundle.putDouble("latitud", marker.getPosition().getLatitude());
                         bundle.putDouble("longitud", marker.getPosition().getLongitude());
                         bundle.putString("name", marker.getTitle().toString());
-
                         getInterestPointServer(marker.getTitle().toString(),marker.getPosition().getLatitude(),marker.getPosition().getLongitude(),1);
                         return false;
                     }
                 });
             }
         });
-
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -123,8 +153,8 @@ public class MainActivity extends AppCompatActivity
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getApplicationContext(), SearchActivity.class);
-                startActivityForResult(intent, SHOW_SEARCH);
+                checkLocationPermission();
+
             }
         });
 
@@ -154,11 +184,15 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
-
-        if (id == R.id.historial) {
+        if (id == R.id.search){
+            Intent intent = new Intent(this, SearchActivity.class);
+            startActivityForResult(intent, SHOW_SEARCH);
+        }
+        else if (id == R.id.historial) {
             Intent intent = new Intent(this, ShowHistorialActivity.class);
             startActivityForResult(intent, SHOW_HISTORIALSACTIVITY);
-        } else if (id == R.id.aboutUs) {
+        }
+        else if (id == R.id.aboutUs) {
             Intent intent = new Intent(this, AboutUsActivity.class);
             startActivityForResult(intent, SHOW_ABOUTUSACTIVITY);
         }
@@ -214,28 +248,43 @@ public class MainActivity extends AppCompatActivity
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(List<InterestPoint> objects, ParseException e) {
-                if (e == null) {
-                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+            if (e == null) {
+                todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                final IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+                for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
+                    final InterestPoint punto = todoItemsAdapter.getItem(i);
+                    Log.v("punto interes:", punto.getObjectId());
 
-                    for (int i = 0; i <= todoItemsAdapter.getCount() - 1; i = i + 1) {
-                        InterestPoint punto = todoItemsAdapter.getItem(i);
+                    ParseFile iconImage = (ParseFile)punto.get("icon");
 
-                        IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
-                        Icon icon = iconFactory.fromResource(R.drawable.marker);
-
-                        mapboxMap.addMarker(new MarkerViewOptions()
-                                .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
-                                .icon(icon)
-                                .title(punto.getNombre()));
-
-                    }
-                } else {
-                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
-                    Toast.makeText(
-                            getBaseContext(),
-                            "getServerList(): error  query, reason: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    iconImage.getDataInBackground(new GetDataCallback() {
+                        public void done(byte[] data, ParseException e) {
+                        if (e == null) {
+                            Bitmap iconBm = BitmapFactory.decodeByteArray(data, 0, data.length);
+                            Bitmap overlayBm = BitmapFactory.decodeResource(getResources(), R.drawable.icon_overlay);
+                            Log.v("image query: ", "got image from server");
+                            Bitmap totalBm = Bitmap.createBitmap(overlayBm.getWidth(), overlayBm.getHeight(), overlayBm.getConfig());
+                            Canvas canvas = new Canvas(totalBm);
+                            canvas.drawBitmap(iconBm, new Matrix(), null);
+                            canvas.drawBitmap(overlayBm, 0, 0, null);
+                            mapboxMap.addMarker(new MarkerOptions()
+                                    .position(new LatLng(punto.getLatitud(), punto.getLongitud()))
+                                    .icon(iconFactory.fromBitmap(totalBm))
+                                    .title(punto.getNombre())
+                            );
+                        } else {
+                            // something went wrong
+                        }
+                        }
+                    });
                 }
+            } else {
+                Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                Toast.makeText(
+                        getBaseContext(),
+                        "getServerList(): error  query, reason: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
             }
         });
     }
@@ -251,8 +300,7 @@ public class MainActivity extends AppCompatActivity
                     todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
                     if (todoItemsAdapter.getCount() == 1) {
                         aInterestPoint = todoItemsAdapter.getItem(0);
-                        bundle.putString("descripcion", aInterestPoint.getDescripcion());
-                        bundle.putString("id", aInterestPoint.getId());
+                        bundle.putString("id", aInterestPoint.getObjectId());
 
                         Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
                         intent.putExtras(bundle);
@@ -278,7 +326,6 @@ public class MainActivity extends AppCompatActivity
                     Double longitud = bundle.getDouble("longitud");
                     String name = bundle.getString("name");
                     String description = bundle.getString("description");
-                    String id = bundle.getString("id");
 
                     if(name.isEmpty() | description.isEmpty()){
                         Toast.makeText(getBaseContext(), "Algún campo no ha sido rellenado correctamente!", Toast.LENGTH_SHORT).show();
@@ -286,15 +333,23 @@ public class MainActivity extends AppCompatActivity
                     else {
                         String filePath = bundle.getString("imagePath");
                         Bitmap bitmapToUpload = BitmapFactory.decodeFile(filePath);
+                        Bitmap iconBitmapToUpload = Bitmap.createScaledBitmap(bitmapToUpload, 150, 150, true);
+
                         ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        ByteArrayOutputStream iconStream = new ByteArrayOutputStream();
                         // Compress image to lower quality scale 1 - 100
                         bitmapToUpload.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+                        iconBitmapToUpload.compress(Bitmap.CompressFormat.PNG, 100, iconStream);
+
                         byte[] imageFileData = stream.toByteArray();
+                        byte[] iconFileData = iconStream.toByteArray();
 
                         ParseFile image = new ParseFile(name + ".jpg", imageFileData);
+                        ParseFile icon = new ParseFile(name + "_icon.png", iconFileData);
                         image.saveInBackground();
+                        icon.saveInBackground();
 
-                        newParseObject(name, description, latitud, longitud, id, image);
+                        newParseObject(name, description, latitud, longitud, image, icon);
                     }
                 }
                 catch(Exception e){
@@ -303,66 +358,170 @@ public class MainActivity extends AppCompatActivity
             }
             else{
                 if(requestCode == SHOW_SEARCH){
-                    Bundle bundle = data.getExtras();
-                    String nombre = bundle.getString("name");
-                    getInterestPointServer(nombre,-1.,-1.,0);
                 }
             }
         }
     }
-    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final String id, final ParseFile image) {
-
-        aInterestPoint = new InterestPoint();
-        aInterestPoint.setNombre(name);
-        aInterestPoint.setLatitud(latitud);
-        aInterestPoint.setLongitud(longitud);
-        aInterestPoint.setDescription(description);
-        aInterestPoint.setImage(image);
-
+    private void newParseObject(final String name, final String description, final Double latitud, final Double longitud, final ParseFile image, final ParseFile icon) {
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
-        query.whereEqualTo("id", id);
+        query.whereEqualTo("nombre", name);
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(List<InterestPoint> objects, ParseException e) {
-                if (e == null) {
-                    todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
-                    if (todoItemsAdapter.getCount() > 0) {
-                        String uniqueId = UUID.randomUUID().toString();
-                        newParseObject(name, description, latitud, longitud,uniqueId, image);
+            if (e == null) {
+                Boolean guardar = true;
+                todoItemsAdapter = new ArrayAdapter<InterestPoint>(getApplicationContext(), R.layout.content_main, R.id.mapView, objects);
+                if(todoItemsAdapter.getCount() != 0 ) {
+                    for (int i = 0; i < todoItemsAdapter.getCount(); i = i + 1) {
+                        InterestPoint aux = todoItemsAdapter.getItem(i);
+                        Double distancia = abs(aux.getLatitud() - latitud) + abs((aux.getLongitud() - longitud));
+                        if (distancia < 0.05) {
+                            guardar = false;
+                        }
                     }
-                    else{
-                        aInterestPoint.setId(id);
-                        aInterestPoint.saveInBackground(new SaveCallback() {
-                            @Override
-                            public void done(ParseException e) {
-                                if (e == null) {
-                                    todoItemsAdapter.notifyDataSetChanged();
-                                    Log.v("object saved in server:", "newParseObject()");
-                                    //display file saved message
-                                    Toast.makeText(getBaseContext(), "Punto de Interés creado correctamente!", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    Log.v("save failed, reason: "+ e.getMessage(), "newParseObject()");
-                                    //display file saved message
-                                    Toast.makeText(getBaseContext(), "El Punto de Interés no se ha creado!", Toast.LENGTH_SHORT).show();
-                                }
-                            }
-
-                        });
-                    }
-                } else {
-                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
-                    Toast.makeText(
-                            getBaseContext(),
-                            "getServerList(): error  query, reason: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
                 }
+                if (todoItemsAdapter.getCount() == 0 | guardar) {
+                    aInterestPoint = new InterestPoint();
+                    aInterestPoint.setNombre(name);
+                    aInterestPoint.setLatitud(latitud);
+                    aInterestPoint.setLongitud(longitud);
+                    aInterestPoint.setDescription(description);
+                    aInterestPoint.setImage(image);
+                    aInterestPoint.setIcon(icon);
+                    aInterestPoint.saveInBackground(new SaveCallback() {
+                        @Override
+                        public void done(ParseException e) {
+                            if (e == null) {
+                                todoItemsAdapter.notifyDataSetChanged();
+                                Log.v("object saved in server:", "newParseObject()");
+                                //display file saved message
+                                Toast.makeText(getBaseContext(), "Punto de Interés creado correctamente!", Toast.LENGTH_SHORT).show();
+                                getServerList();
+                            } else {
+                                Log.v("save failed, reason: " + e.getMessage(), "newParseObject()");
+                                //display file saved message
+                                Toast.makeText(getBaseContext(), "El Punto de Interés no se ha creado!", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                }
+                else{
+                    Toast.makeText(getBaseContext(), "Ya existe un punto de interés con ese nombre en esta zona!", Toast.LENGTH_SHORT).show();
+                }
+            }
             }
         });
         this.getServerList();
     }
+    public void gotoUserLocation(){
+        @SuppressLint("MissingPermission") Location lastLocation = locationEngine.getLastLocation();
+        if (lastLocation != null) {
+            mapboxMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lastLocation), 12));
+        } else {
+            Log.v("location null", "");
+        }
+    }
+    public void gotoDefaultLocation(){
+        mapboxMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(42.8129371, -1.6465871), 12));
+    }
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
 
-    public void meterAHistorial(Bundle bundle){}
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                new AlertDialog.Builder(this)
+                        .setTitle("Acceso a localización")//R.string.title_location_permission
+                        .setMessage("Tu localización permanecerá privada y no se guardará en nuestro servidor.")//R.string.text_location_permission
+                        .setPositiveButton("ok", new DialogInterface.OnClickListener() {//R.string.ok
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(MainActivity.this,
+                                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                        MY_PERMISSIONS_REQUEST_LOCATION);
+                            }
+                        })
+                        .create()
+                        .show();
+
+
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSIONS_REQUEST_LOCATION);
+            }
+            return false;
+        } else {
+            if (locationEngineListener == null) {
+                locationEngineListener = new LocationEngineListener() {
+                    @SuppressLint("MissingPermission")
+                    @Override
+                    public void onConnected() {
+                        locationEngine.requestLocationUpdates();
+                    }
+
+                    @Override
+                    public void onLocationChanged(Location location) {
+
+                    }
+                };
+                locationEngine.addLocationEngineListener(locationEngineListener);
+            }
+            gotoUserLocation();
+            return true;
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // location-related task you need to do.
+                    if (ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+
+                        //Request location updates:
+                        locationEngineListener = new LocationEngineListener() {
+                            @SuppressLint("MissingPermission")
+                            @Override
+                            public void onConnected() {
+                                locationEngine.requestLocationUpdates();
+                            }
+
+                            @Override
+                            public void onLocationChanged(Location location) {
+
+                            }
+                        };
+                        locationEngine.addLocationEngineListener(locationEngineListener);
+                        gotoUserLocation();
+                    }
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                    gotoDefaultLocation();
+                }
+                return;
+            }
+
+        }
+    }
+
+
 }
-
-
-
-

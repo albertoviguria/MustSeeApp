@@ -28,10 +28,10 @@
         android:layout_height="53dp"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
-        app:srcCompat="@android:drawable/ic_menu_search"
+        app:srcCompat="@drawable/localize"
         tools:layout_editor_absoluteX="345dp"
         tools:layout_editor_absoluteY="681dp"
-        app:backgroundTint="@android:color/holo_purple"
+        app:backgroundTint="#7401DF"
         />
 
 </android.support.design.widget.CoordinatorLayout>

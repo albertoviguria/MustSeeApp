@@ -2,15 +2,19 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:background="#E6E6E6"
+    tools:showIn="@layout/app_bar_main"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
         android:id="@+id/title"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_marginTop="10dp"
+        android:layout_height="70dp"
+        android:textSize="25sp"
+        android:textStyle="bold"
         android:text="@string/Historial"
-        />
+        android:gravity="center" />
 
     <ListView
         android:id="@+id/list"

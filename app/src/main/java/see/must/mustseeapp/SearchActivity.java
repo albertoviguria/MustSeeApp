@@ -40,48 +40,47 @@ public class SearchActivity extends Activity{
         query.whereContains("nombre", name);
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(final List<InterestPoint> objects, ParseException e) {
-                if (e == null) {
-                    for (InterestPoint object : objects) {
-                        Log.v("1 imagen",object.toString());
-                        ParseFile applicantResume = (ParseFile)object.get("image");
-                        applicantResume.getDataInBackground(new GetDataCallback() {
-                            public void done(byte[] data, ParseException e) {
-                                if (e == null) {
-                                    Log.v("1 imagen con e null","d hnj");
-                                    imagenes.add(data);
-                                    if(imagenes.size() == objects.size()){
-                                        final CustomAdapter todoItemsAdapter = new CustomAdapter(SearchActivity.this, objects, imagenes);
-                                        lv.setAdapter(todoItemsAdapter);
-                                        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                            @Override
-                                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                                InterestPoint item = (InterestPoint) lv.getItemAtPosition(position);
-                                                Bundle bundle = new Bundle();
-                                                bundle.putString("name", item.getNombre());
-                                                bundle.putString("descripcion", item.getDescripcion());
-                                                bundle.putString("id", item.getId());
-                                                bundle.putByteArray("image",imagenes.get(position));
-                                                Log.v("Contenido imagen",imagenes.get(position).toString());
-                                                Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
-                                                intent.putExtras(bundle);
-                                                startActivityForResult(intent, 1);
-                                            }
-                                        });
+            if (e == null) {
+                for (InterestPoint object : objects) {
+                    Log.v("1 imagen",object.toString());
+                    ParseFile applicantResume = (ParseFile)object.get("icon");
+                    applicantResume.getDataInBackground(new GetDataCallback() {
+                        public void done(byte[] data, ParseException e) {
+                        if (e == null) {
+                            Log.v("1 imagen con e null","d hnj");
+                            imagenes.add(data);
+                            if(imagenes.size() == objects.size()){
+                                Log.v("coinciden size", String.valueOf(objects.size()));
+                                final CustomAdapter todoItemsAdapter = new CustomAdapter(SearchActivity.this, objects, imagenes);
+                                lv.setAdapter(todoItemsAdapter);
+                                lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                    @Override
+                                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                        Log.v("zona problematic:", "entrando"+position);
+                                        InterestPoint item = (InterestPoint) lv.getItemAtPosition(position);
+                                        Bundle bundle = new Bundle();
+                                        bundle.putString("id", item.getObjectId());
+                                        Log.v("Contenido imagen",imagenes.get(position).toString());
+                                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                                        intent.putExtras(bundle);
+                                        startActivityForResult(intent, 1);
                                     }
-                                } else {
-                                    Log.v("No hay nada","hdn");
-                                    //imamgenes.add("no_image.png");
-                                }
+                                });
                             }
-                        });
-                    }
-                } else {
-                    Log.v("error query, reason: " + e.getMessage(), "getServerList()");
-                    Toast.makeText(
-                            getBaseContext(),
-                            "getServerList(): error  query, reason: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.v("No hay nada","hdn");
+                            //imamgenes.add("no_image.png");
+                        }
+                        }
+                    });
                 }
+            } else {
+                Log.v("error query, reason: " + e.getMessage(), "getServerList()");
+                Toast.makeText(
+                        getBaseContext(),
+                        "getServerList(): error  query, reason: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
+            }
             }
         });
     }

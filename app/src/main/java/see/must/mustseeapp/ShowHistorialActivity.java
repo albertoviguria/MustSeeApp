@@ -2,27 +2,20 @@ package see.must.mustseeapp;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
-
 import com.parse.FindCallback;
 import com.parse.GetDataCallback;
 import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseQuery;
-
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,13 +51,13 @@ public class ShowHistorialActivity  extends Activity {
             scan.close();
 
             ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
-            query.whereContainedIn("id",lista);
+            query.whereContainedIn("objectId", lista);
             query.findInBackground(new FindCallback<InterestPoint>() {
                 public void done(final List<InterestPoint> objects, ParseException e) {
                     if (e == null) {
                         for (InterestPoint object : objects) {
-                            ParseFile applicantResume = (ParseFile)object.get("image");
-                            applicantResume.getDataInBackground(new GetDataCallback() {
+                            ParseFile icon = (ParseFile)object.get("icon");
+                            icon.getDataInBackground(new GetDataCallback() {
                                 public void done(byte[] data, ParseException e) {
                                     if (e == null) {
                                         Log.v("1 imagen con e null","d hnj");
@@ -77,7 +70,7 @@ public class ShowHistorialActivity  extends Activity {
                                                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                                                     InterestPoint item = (InterestPoint) lv.getItemAtPosition(position);
                                                     Bundle bundle = new Bundle();
-                                                    bundle.putString("id", item.getId());
+                                                    bundle.putString("id", item.getObjectId());
                                                     Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
                                                     intent.putExtras(bundle);
                                                     startActivityForResult(intent, 1);

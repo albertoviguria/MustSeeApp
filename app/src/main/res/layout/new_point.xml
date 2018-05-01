@@ -2,7 +2,9 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#E6E6E6"
+    >
 
     <TextView
         android:id="@+id/titulo"
@@ -10,6 +12,7 @@
         android:layout_height="wrap_content"
         android:text="@string/newpoint"
         android:textSize="25sp"
+        android:gravity="center"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -21,6 +24,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="104dp"
         android:ems="10"
+        android:backgroundTint="#7401DF"
         android:hint="@string/newname"
         app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -36,6 +40,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="184dp"
         android:ems="10"
+        android:backgroundTint="#7401DF"
         android:hint="@string/desc"
         app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -44,25 +49,30 @@
 
     <Button
         android:id="@+id/button1"
-        android:layout_width="wrap_content"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_alignTop="@+id/edit_nombre"
         android:layout_marginTop="396dp"
         android:onClick="saveLocation"
         android:text="@string/button_add_location"
+        android:background="#F2F2F2"
+        android:shape="oval"
         app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        />
 
     <Button
         android:id="@+id/button"
-        android:layout_width="wrap_content"
+        android:layout_width="110dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="256dp"
         android:onClick="addPhoto"
         android:text="Añadir foto"
+        android:shape="oval"
+        android:background="#F2F2F2"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
