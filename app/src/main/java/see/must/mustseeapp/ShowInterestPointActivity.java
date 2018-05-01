@@ -30,7 +30,7 @@ import java.util.Scanner;
 
 import see.must.mustseeapp.Model.InterestPoint;
 
-public class ShowInteresPointActivity extends Activity {
+public class ShowInterestPointActivity extends Activity {
     private String id;
     private Bundle bundle;
     private File file;

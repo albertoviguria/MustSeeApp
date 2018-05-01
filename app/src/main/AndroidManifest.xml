@@ -27,11 +27,11 @@
             android:label="AboutUs" >
         </activity>
         <activity
-            android:name="see.must.mustseeapp.NewInteresPointActivity"
+            android:name="see.must.mustseeapp.NewInterestPointActivity"
             android:label="NewPoint" >
         </activity>
         <activity
-            android:name="see.must.mustseeapp.ShowInteresPointActivity"
+            android:name="see.must.mustseeapp.ShowInterestPointActivity"
             android:label="ShowPoint" >
         </activity>
         <activity

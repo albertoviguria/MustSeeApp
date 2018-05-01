@@ -2,13 +2,11 @@ package see.must.mustseeapp;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 import com.parse.FindCallback;
 import com.parse.GetDataCallback;
@@ -68,7 +66,7 @@ public class ShowHistorialActivity  extends Activity {
                                                     InterestPoint item = (InterestPoint) lv.getItemAtPosition(position);
                                                     Bundle bundle = new Bundle();
                                                     bundle.putString("id", item.getObjectId());
-                                                    Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                                                    Intent intent = new Intent(getApplicationContext(), ShowInterestPointActivity.class);
                                                     intent.putExtras(bundle);
                                                     startActivityForResult(intent, 1);
                                                 }

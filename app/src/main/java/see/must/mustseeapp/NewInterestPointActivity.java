@@ -16,7 +16,7 @@ import android.view.View;
 import android.widget.EditText;
 import java.util.UUID;
 
-public class NewInteresPointActivity extends Activity {
+public class NewInterestPointActivity extends Activity {
     Bundle bundle;
     private String filePath;
     private String file_extn;
@@ -32,10 +32,10 @@ public class NewInteresPointActivity extends Activity {
         final int MyVersion = Build.VERSION.SDK_INT;
         if (MyVersion > Build.VERSION_CODES.LOLLIPOP_MR1) {
             int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1;
-            if (ContextCompat.checkSelfPermission(NewInteresPointActivity.this,
+            if (ContextCompat.checkSelfPermission(NewInterestPointActivity.this,
                     Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 //pedir permisos
-                ActivityCompat.requestPermissions(NewInteresPointActivity.this,
+                ActivityCompat.requestPermissions(NewInterestPointActivity.this,
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                         MY_PERMISSIONS_REQUEST_READ_CONTACTS);
             } else {

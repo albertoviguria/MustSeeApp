@@ -114,7 +114,7 @@ public class MainActivity extends AppCompatActivity
                     Bundle bundle = new Bundle();
                     bundle.putDouble("latitud", point.getLatitude());
                     bundle.putDouble("longitud", point.getLongitude());
-                    Intent intent = new Intent(getApplicationContext(), NewInteresPointActivity.class);
+                    Intent intent = new Intent(getApplicationContext(), NewInterestPointActivity.class);
                     intent.putExtras(bundle);
                     startActivityForResult(intent, SHOW_NEWPOINTACTIVITY);
                     }
@@ -302,7 +302,7 @@ public class MainActivity extends AppCompatActivity
                         aInterestPoint = todoItemsAdapter.getItem(0);
                         bundle.putString("id", aInterestPoint.getObjectId());
 
-                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                        Intent intent = new Intent(getApplicationContext(), ShowInterestPointActivity.class);
                         intent.putExtras(bundle);
                         startActivityForResult(intent, SHOW_SHOWINTERESPOINTACTIVITY);
                     }

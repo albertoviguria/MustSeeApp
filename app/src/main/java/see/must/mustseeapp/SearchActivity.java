@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -61,7 +60,7 @@ public class SearchActivity extends Activity{
                                         Bundle bundle = new Bundle();
                                         bundle.putString("id", item.getObjectId());
                                         Log.v("Contenido imagen",imagenes.get(position).toString());
-                                        Intent intent = new Intent(getApplicationContext(), ShowInteresPointActivity.class);
+                                        Intent intent = new Intent(getApplicationContext(), ShowInterestPointActivity.class);
                                         intent.putExtras(bundle);
                                         startActivityForResult(intent, 1);
                                     }
