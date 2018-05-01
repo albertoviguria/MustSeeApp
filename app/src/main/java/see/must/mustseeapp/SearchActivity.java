@@ -16,6 +16,7 @@ import com.parse.ParseException;
 import com.parse.ParseFile;
 import com.parse.ParseQuery;
 
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,9 +35,13 @@ public class SearchActivity extends Activity{
 
     public void search(View view) {
         EditText editText = findViewById(R.id.edit_search);
-        String name = editText.getText().toString();
+        String keywords = editText.getText().toString();
+        keywords = Normalizer
+                        .normalize(keywords, Normalizer.Form.NFD)
+                        .replaceAll("[^\\p{ASCII}]", "")
+                        .toUpperCase();
         ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
-        query.whereContains("nombre", name);
+        query.whereContains("searchKeywords", keywords);
         query.findInBackground(new FindCallback<InterestPoint>() {
             public void done(final List<InterestPoint> objects, ParseException e) {
             if (e == null) {

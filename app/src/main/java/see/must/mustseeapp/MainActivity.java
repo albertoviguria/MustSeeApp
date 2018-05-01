@@ -50,6 +50,7 @@ import com.parse.ParseQuery;
 import com.parse.SaveCallback;
 
 import java.io.ByteArrayOutputStream;
+import java.text.Normalizer;
 import java.util.List;
 
 import see.must.mustseeapp.Model.InterestPoint;
@@ -382,6 +383,12 @@ public class MainActivity extends AppCompatActivity
                 if (todoItemsAdapter.getCount() == 0 | guardar) {
                     aInterestPoint = new InterestPoint();
                     aInterestPoint.setNombre(name);
+                    String searchKeywords =
+                            Normalizer
+                                    .normalize(name, Normalizer.Form.NFD)
+                                    .replaceAll("[^\\p{ASCII}]", "")
+                                    .toUpperCase();
+                    aInterestPoint.setSearchKeywords(searchKeywords);
                     aInterestPoint.setLatitud(latitud);
                     aInterestPoint.setLongitud(longitud);
                     aInterestPoint.setDescription(description);

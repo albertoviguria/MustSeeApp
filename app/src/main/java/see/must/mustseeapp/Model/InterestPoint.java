@@ -52,4 +52,8 @@ public class InterestPoint extends ParseObject{
     public void setIcon(ParseFile icon) {
         put("icon", icon);
     }
+
+    public void setSearchKeywords(String searchKeywords) {
+        put("searchKeywords", searchKeywords);
+    }
 }
