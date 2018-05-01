@@ -41,13 +41,10 @@ public class ShowHistorialActivity  extends Activity {
             }
             Scanner scan = new Scanner(file);
 
-            Log.v("Pre Lectura", "entrada 2");
             String line = scan.nextLine();
             String[] listado = line.split("[|]");
             lista = Arrays.asList(listado);
 
-            Log.v("line leida", String.valueOf(lista.size()));
-            Log.v("Post lectura", "salida");
             scan.close();
 
             ParseQuery<InterestPoint> query = ParseQuery.getQuery("InterestPoint");
